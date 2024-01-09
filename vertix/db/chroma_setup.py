@@ -16,6 +16,11 @@ def setup_ephemeral_client(
         - `database` (str): The name of the database to connect to (default: `DEFAULT_DATABASE`, defined in the ChromaDB library)
     """
 
+    if not isinstance(tenant, str) or not isinstance(database, str):
+        raise TypeError(
+            f"All arguments must be strings. Got types {type(tenant)}, and {type(database)}"
+        )
+
     return chromadb.EphemeralClient(tenant=tenant, database=database)
 
 
@@ -33,6 +38,15 @@ def setup_persistent_client(
         - `tenant` (str): The name of the tenant to connect to (default: `DEFAULT_TENANT`, defined in the ChromaDB library)
         - `database` (str): The name of the database to connect to (default: `DEFAULT_DATABASE`, defined in the ChromaDB library)
     """
+
+    if (
+        not isinstance(path, str)
+        or not isinstance(tenant, str)
+        or not isinstance(database, str)
+    ):
+        raise TypeError(
+            f"All arguments must be strings. Got types {type(path)}, {type(tenant)}, and {type(database)}"
+        )
 
     return chromadb.PersistentClient(path=path, tenant=tenant, database=database)
 
@@ -52,5 +66,24 @@ def set_up_http_client(
         - `ssl` (bool): Whether to use SSL to connect to the Chroma server (default: `False`)
         - `headers` (dict[str, str]): A dictionary of headers to send to the Chroma server (default: `{}`)
     """
+
+    if not isinstance(host, str) or not isinstance(port, str):
+        raise TypeError(
+            f"`host` and `port` arguments must be strings. Got types {type(host)} and {type(port)}"
+        )
+
+    if not isinstance(ssl, bool):
+        raise TypeError(f"`ssl` argument must be a boolean. Got type {type(ssl)}")
+
+    if not isinstance(headers, dict) or headers is None:
+        raise TypeError(
+            f"`headers` argument must be a dictionary or `None`. Got type {type(headers)}"
+        )
+
+    if not all(isinstance(key, str) for key in headers.keys()):
+        raise TypeError("`headers` argument must be a dictionary with string keys.")
+
+    if not all(isinstance(value, str) for value in headers.values()):
+        raise TypeError("`headers` argument must be a dictionary with string values.")
 
     return chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
