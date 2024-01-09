@@ -1,1 +1,2 @@
-from vertix.models.models import Node, Edge
+from vertix.models.node_model import Node
+from vertix.models.edge_model import Edge
