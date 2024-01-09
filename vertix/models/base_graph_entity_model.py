@@ -1,4 +1,6 @@
 from datetime import datetime
+import logging
+from typing import Generic, TypeVar
 import uuid
 
 from pydantic import (
@@ -7,6 +9,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.fields import FieldInfo
 
 from vertix.typings import (
     AttributeDictType,
@@ -14,23 +17,27 @@ from vertix.typings import (
 )
 
 
-class BaseGraphEntityModel(BaseModel, validate_assignment=True):
+T = TypeVar("T", bound="BaseGraphEntityModel")
+
+
+class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
     """
     A base class for models to be used in the ORM for the graph databases.
 
     Attributes:
-        - id (str): The primary key for the the model, used to create edges (defaults to a uuid4)
-        - label (str): A custom label for the node (defaults to an empty string)
-        - description (str): A description of the node (defaults to an empty string)
-        - type (str): The type of node, used to create edges (defaults to "node")
-        - neighbors_count (int): The number of neighbors this node has (defaults to 0)
-        - created_at (str): The time at creation (defaults to the current time)
-        - updated_at (str): The time at the last update (defaults to the current time)
-        - Extras (PrimitiveType): Any additional attributes assigned to the model using the `additional_attributes` field
+        - `id` (str): The primary key for the the model, used to create edges (defaults to a `uuid4`)
+        - `label` (str): A custom label for the node (defaults to an empty string)
+        - `created_at` (str): The time at creation (defaults to the current time)
+        - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
+        - `updated_at` (str): The time at the last update (defaults to the current time)
+        - `additional_attributes` (AttributeDictType): Any additional attributes assigned to the model using the `additional_attributes` field
+            - `AttributeDictType` is defined in `vertix/typings/__init__.py` as:
+                - `dict[str, str | int | float | bool]`
 
 
     Methods:
         - `serialize()`: Serializes the node into a flattened dictionary with only primitive types.
+        - `deserialize(data)`: Deserializes a dictionary into a model instance.
     """
 
     id: str = Field(
@@ -39,6 +46,10 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
     )
     label: str = Field(
         description="A custom label for the model.",
+        default="",
+    )
+    document: str = Field(
+        description="A string used for vector embedding and similarity search or as other information in the graph.",
         default="",
     )
     created_at: str = Field(
@@ -62,12 +73,16 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
     @field_validator("additional_attributes", mode="before")
     def _validate_additional_attributes(cls, v: AttributeDictType) -> AttributeDictType:
         """
-        Validates the additional attributes field
+        Validates the `additional_attributes` field ensuring that it conforms to the
+        `AttributeDictType` type.
+
+        `AttributeDictType` is defined in `vertix/typings/__init__.py` as:
+            - `dict[str, str | int | float | bool]`
 
         Raises:
-            - TypeError: If additional_attributes is not a dictionary
-            - TypeError: If additional_attributes keys are not strings
-            - TypeError: If additional_attributes values are not strings, ints, floats, or booleans
+            - `TypeError`: If `additional_attributes` is not a dictionary
+            - `TypeError`: If `additional_attributes` keys are not strings
+            - `TypeError`: If `additional_attributes` values are not strings, ints, floats, or booleans
         """
         if not isinstance(v, dict):
             raise TypeError("`additional_attributes` must be a dictionary")
@@ -83,11 +98,11 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
     @field_validator("created_at", mode="before")
     def _validate_created_at(cls, value: str) -> str:
         """
-        Validates the created_at field.
+        Validates the `created_at` field.
 
         Raises:
-            - ValueError: If created_at is after the current time, or if it is not a valid isoformat string
-            - TypeError: If created_at is not a string
+            - `ValueError`: If `created_at` is after the current time, or if it is not a valid isoformat string
+            - `TypeError`: If `created_at` is not a string
         """
         if not isinstance(value, str):
             raise TypeError("`created_at` must be a isoformat timestamp string")
@@ -104,11 +119,11 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
     @field_validator("updated_at", mode="before")
     def _validate_updated_at(cls, value: str) -> str:
         """
-        Validates the updated_at field.
+        Validates the `updated_at` field.
 
         Raises:
-            - ValueError: If updated_at is after the current time, or if it is not a valid isoformat string
-            - TypeError: If updated_at is not a string
+            - `ValueError`: If `updated_at` is after the current time, or if it is not a valid isoformat string
+            - `TypeError`: If `updated_at` is not a string
         """
         if not isinstance(value, str):
             raise TypeError("`updated_at` must be a isoformat timestamp string")
@@ -127,12 +142,12 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
         cls, values: dict[str, PrimitiveType]
     ) -> dict[str, PrimitiveType]:
         """
-        Validates that created_at and updated_at are provided together and the created_at is equal
-        to or before the updated_at.
+        Validates that created_at and `updated_at` are provided together and the created_at is equal
+        to or before the `updated_at`.
 
         Raises:
-            - ValueError: If created_at is after updated_at, or if one is provided without the other
-            - TypeError: If created_at or updated_at are not strings
+            - `ValueError`: If created_at is after `updated_at`, or if one is provided without the other
+            - `TypeError`: If created_at or `updated_at` are not strings
         """
         created_at: PrimitiveType | None = values.get("created_at")
         updated_at: PrimitiveType | None = values.get("updated_at")
@@ -157,22 +172,76 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
         """
         Serializes the node into a flattened dictionary with only primitive types.
 
+        `PrimitiveType` is defined in `vertix/typings/__init__.py` as:
+            - `str | int | float | bool`
+
         Returns:
-            - dict[str, PrimitiveType]: A dictionary of the node's attributes
+            - `dict[str, PrimitiveType]`: A dictionary of the node's attributes
 
         Raises:
-            - Exception: If the node cannot be serialized
+            - `Exception`: If the node cannot be serialized
         """
 
-        try:
-            current_time: str = self._current_time()
-            if not self.created_at:
-                self.created_at = current_time
-            self.updated_at = current_time
-            return {
-                **self.model_dump(exclude={"additional_attributes"}),
-                **self.additional_attributes,
-            }
+        current_time: str = self._current_time()
+        if self.created_at == "":
+            self.created_at = current_time
+        self.updated_at = current_time
+        return {
+            **self.model_dump(exclude={"additional_attributes"}),
+            **self.additional_attributes,
+        }
 
-        except Exception as e:
-            raise e
+    @classmethod
+    def deserialize(cls: type[T], data: dict[str, PrimitiveType]) -> T:
+        """
+        Deserializes a dictionary into a model instance.
+
+        This method will return an instance of the subclass that calls it. If called on a `Node`
+        class, it will return a `Node` instance. If called on an `Edge` class, it will return an
+        `Edge` instance.
+
+        Args:
+            - `data` (`dict[str, PrimitiveType]`): A dictionary of the model's expected attributes
+                - `PrimitiveType` is defined in `vertix/typings/__init__.py` as:
+                    - `str | int | float | bool`
+
+        Returns:
+            - `Node` | `Edge`: An instance of the model class that called the method with the
+                attributes set to the values in `data`
+
+        Raises:
+            - `TypeError`: If the data is not a dictionary
+            - `TypeError`: If the data keys are not strings
+            - `TypeError`: If the data values are not primitive types
+        """
+        declared_attrs = {}
+
+        fields: dict[str, FieldInfo] = cls.model_fields
+        for field_name, field_info in fields.items():
+            if field_name in data:
+                expected_type: type | None = field_info.annotation
+                if not expected_type:
+                    raise TypeError(
+                        f"Expected type for field '{field_name}' not found in annotations"
+                    )
+                value = data[field_name]
+
+                if not isinstance(value, expected_type):
+                    raise TypeError(
+                        f"Expected type '{expected_type}' for field '{field_name}', got '{type(value)}'"
+                    )
+
+                declared_attrs[field_name] = value
+            else:
+                logging.warning(
+                    f"Field '{field_name}' not found in data, setting to default value"
+                )
+
+        additional_attrs: dict[str, PrimitiveType] = {
+            key: value for key, value in data.items() if key not in fields
+        }
+
+        instance: T = cls(**declared_attrs)
+        instance.additional_attributes = additional_attrs
+
+        return instance
