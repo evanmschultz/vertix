@@ -4,19 +4,20 @@ from pydantic import (
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
 
 
-class Edge(BaseGraphEntityModel):
+class Edge(BaseGraphEntityModel["Edge"]):
     """
     Model for an edge in the graph database.
 
     Attributes:
-        - id (str): The primary key for the model (defaults to a uuid4)
-        - label (str): A custom label for the edge (defaults to an empty string)
-        - is_directed (bool): Whether the edge is directed or not (defaults to True)
-        - allow_parallel_edges (bool): Whether the edge allows parallel edges or not (defaults to False)
-        - from_id (str): The id of the node that the edge starts from
-        - to_id (str): The id of the node that the edge ends at
-        - type (str): The type of edge (defaults to "edge")
-        - additional_attributes (AttributeDictType): A dictionary of additional attributes (defaults to an empty dictionary)
+        - `id` (str): The primary key for the model (defaults to a uuid4)
+        - `label` (str): A custom label for the edge (defaults to an empty string)
+        - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
+        - `is_directed` (bool): Whether the edge is directed or not (defaults to True)
+        - `allow_parallel_edges` (bool): Whether the edge allows parallel edges or not (defaults to False)
+        - `from_id` (str): The id of the node that the edge starts from
+        - `to_id` (str): The id of the node that the edge ends at
+        - `type` (str): The type of edge (defaults to "edge")
+        - `additional_attributes` (AttributeDictType): A dictionary of additional attributes (defaults to an empty dictionary)
 
     Methods:
         - `serialize()`: Serializes the edge into a flattened dictionary with only primitive types.

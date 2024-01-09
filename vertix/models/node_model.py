@@ -1,22 +1,26 @@
 from pydantic import Field
 
+
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
+from vertix.typings import PrimitiveType
 
 
-class Node(BaseGraphEntityModel):
+class Node(BaseGraphEntityModel["Node"]):
     """
     Model for a node in the graph database.
 
     Attributes:
-        - id (str): The primary key for the the model, used to create edges (defaults to a uuid4)
-        - label (str): A custom label for the node (defaults to an empty string)
-        - description (str): A description of the node (defaults to an empty string)
-        - type (str): The type of node, used to create edges (defaults to "node")
-        - neighbors_count (int): The number of neighbors this node has (defaults to 0)
-        - additional_attributes (AttributeDictType): A dictionary of additional attributes (defaults to an empty dictionary)
+        - `id` (str): The primary key for the the model, used to create edges (defaults to a uuid4)
+        - `label` (str): A custom label for the node (defaults to an empty string)
+        - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
+        - `description` (str): A description of the node (defaults to an empty string)
+        - `type` (str): The type of node, used to create edges (defaults to "node")
+        - `neighbors_count` (int): The number of neighbors this node has (defaults to 0)
+        - `additional_attributes` (AttributeDictType): A dictionary of additional attributes (defaults to an empty dictionary)
 
     Methods:
         - `serialize()`: Serializes the node into a flattened dictionary with only primitive types.
+        - `deserialize(data)`: Deserializes a dictionary into a model instance.
 
     Notes:
         - Attributes can be updated by setting the attribute to a new value, e.g. `node.neighbors_count = 2`
