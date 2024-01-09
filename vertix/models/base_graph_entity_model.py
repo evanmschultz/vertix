@@ -26,7 +26,7 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
         - neighbors_count (int): The number of neighbors this node has (defaults to 0)
         - created_at (str): The time at creation (defaults to the current time)
         - updated_at (str): The time at the last update (defaults to the current time)
-        - Extras (PrimitiveType): Any additional attributes assigned to the model
+        - Extras (PrimitiveType): Any additional attributes assigned to the model using the `additional_attributes` field
 
 
     Methods:
@@ -42,11 +42,11 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
         default="",
     )
     created_at: str = Field(
-        description="The time at creation",
+        description="The time at creation, only to be set when coming from the database",
         default="",
     )
     updated_at: str = Field(
-        description="The time at the last update",
+        description="The time at the last update, only to be set when coming from the database",
         default="",
     )
     additional_attributes: AttributeDictType = Field(
@@ -61,8 +61,14 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
 
     @field_validator("additional_attributes", mode="before")
     def _validate_additional_attributes(cls, v: AttributeDictType) -> AttributeDictType:
-        """Validates the additional attributes field"""
+        """
+        Validates the additional attributes field
 
+        Raises:
+            - TypeError: If additional_attributes is not a dictionary
+            - TypeError: If additional_attributes keys are not strings
+            - TypeError: If additional_attributes values are not strings, ints, floats, or booleans
+        """
         if not isinstance(v, dict):
             raise TypeError("`additional_attributes` must be a dictionary")
         for key, value in v.items():
@@ -76,8 +82,13 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
 
     @field_validator("created_at", mode="before")
     def _validate_created_at(cls, value: str) -> str:
-        """Validates the created_at field"""
+        """
+        Validates the created_at field.
 
+        Raises:
+            - ValueError: If created_at is after the current time, or if it is not a valid isoformat string
+            - TypeError: If created_at is not a string
+        """
         if not isinstance(value, str):
             raise TypeError("`created_at` must be a isoformat timestamp string")
         try:
@@ -92,8 +103,13 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
 
     @field_validator("updated_at", mode="before")
     def _validate_updated_at(cls, value: str) -> str:
-        """Validates the updated_at field"""
+        """
+        Validates the updated_at field.
 
+        Raises:
+            - ValueError: If updated_at is after the current time, or if it is not a valid isoformat string
+            - TypeError: If updated_at is not a string
+        """
         if not isinstance(value, str):
             raise TypeError("`updated_at` must be a isoformat timestamp string")
         try:
@@ -107,11 +123,19 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
         return value
 
     @model_validator(mode="before")
-    def _validate_created_at_updated_at(cls, values: dict[str, PrimitiveType]) -> dict:
-        """Validates that created_at is before updated_at"""
+    def _validate_created_at_and_updated_at_together(
+        cls, values: dict[str, PrimitiveType]
+    ) -> dict[str, PrimitiveType]:
+        """
+        Validates that created_at and updated_at are provided together and the created_at is equal
+        to or before the updated_at.
 
-        created_at = values.get("created_at")
-        updated_at = values.get("updated_at")
+        Raises:
+            - ValueError: If created_at is after updated_at, or if one is provided without the other
+            - TypeError: If created_at or updated_at are not strings
+        """
+        created_at: PrimitiveType | None = values.get("created_at")
+        updated_at: PrimitiveType | None = values.get("updated_at")
 
         if (created_at is not None and updated_at is None) or (
             created_at is None and updated_at is not None
@@ -135,6 +159,9 @@ class BaseGraphEntityModel(BaseModel, validate_assignment=True):
 
         Returns:
             - dict[str, PrimitiveType]: A dictionary of the node's attributes
+
+        Raises:
+            - Exception: If the node cannot be serialized
         """
 
         try:
