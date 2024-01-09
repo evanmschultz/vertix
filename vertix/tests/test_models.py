@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
+from unittest.mock import patch
+
 from pydantic import ValidationError
 import pytest
+
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
 from vertix.models import Node, Edge
 
@@ -227,3 +230,158 @@ def test_edge_timestamps_from_created_model() -> None:
     edge.serialize()
     assert edge.created_at == "2021-01-01T00:00:00.000000"
     assert edge.created_at != edge.updated_at
+
+
+def test_base_graph_entity_model_additional_attributes_validation() -> None:
+    with pytest.raises(TypeError):
+        BaseGraphEntityModel(additional_attributes="not a dict")  # type: ignore # should be a dict
+
+    with pytest.raises(TypeError):
+        BaseGraphEntityModel(additional_attributes={123: "value"})  # type: ignore # key not a string
+
+    with pytest.raises(TypeError):
+        BaseGraphEntityModel(additional_attributes={"key": [1, 2, 3]})  # type: ignore # value not a primitive type
+
+
+def test_base_graph_entity_model_timestamp_edge_cases() -> None:
+    with pytest.raises(ValueError):
+        BaseGraphEntityModel(created_at="not a timestamp")  # invalid format
+
+    with pytest.raises(ValueError):
+        BaseGraphEntityModel(updated_at="2025-01-01T00:00:00")  # future timestamp
+
+    with pytest.raises(ValueError):
+        BaseGraphEntityModel(
+            created_at="2020-01-01T00:00:00", updated_at="2019-01-01T00:00:00"
+        )  # created_at after updated_at
+
+
+def test_base_graph_entity_model_serialization() -> None:
+    model = BaseGraphEntityModel()
+    assert model.created_at == ""
+    assert model.updated_at == ""
+    model = BaseGraphEntityModel(additional_attributes={"key": "value"})
+    serialized: dict[str, PrimitiveType] = model.serialize()
+    model_created_at: datetime = datetime.fromisoformat(model.created_at)
+    model_updated_at: datetime = datetime.fromisoformat(model.updated_at)
+    try:
+        serialized_created_at: datetime = datetime.fromisoformat(serialized["created_at"])  # type: ignore # mypy doesn't like this
+        serialized_updated_at: datetime = datetime.fromisoformat(serialized["updated_at"])  # type: ignore # mypy doesn't like this
+    except KeyError:
+        pytest.fail("Serialized model missing `created_at` or `updated_at` key")
+
+    assert serialized_created_at == model_created_at
+    assert serialized_updated_at == model_updated_at
+    assert serialized["created_at"] == model.created_at
+    assert serialized["updated_at"] == model.updated_at
+
+
+def test_base_graph_entity_model_serialization_exception_handling() -> None:
+    model = BaseGraphEntityModel()
+
+    with patch.object(
+        BaseGraphEntityModel, "model_dump", side_effect=Exception("Serialization Error")
+    ):
+        with pytest.raises(Exception) as excinfo:
+            model.serialize()
+        assert "Serialization Error" in str(excinfo.value)
+
+
+def test_deserialize_node_success() -> None:
+    data = {
+        "id": "123",
+        "label": "Test Node",
+        "description": "A test node",
+        "type": "node",
+        "neighbors_count": 5,
+    }
+    node: Node = Node.deserialize(data)
+    assert isinstance(node, Node)
+    assert node.id == "123"
+    assert node.label == "Test Node"
+    assert node.description == "A test node"
+    assert node.type == "node"
+    assert node.neighbors_count == 5
+
+
+def test_deserialize_with_type_mismatch() -> None:
+    data = {
+        "id": "123",
+        "label": "Test Node",
+        "neighbors_count": "Not a number",  # This should be an int
+    }
+    with pytest.raises(TypeError):
+        Node.deserialize(data)  # type: ignore
+
+
+def test_deserialize_with_missing_fields() -> None:
+    data = {
+        "id": "123",
+        "label": "Test Node",
+        # Missing other required fields
+    }
+    node = Node.deserialize(data)  # type: ignore
+    assert node.description == ""
+    # Assert other default values
+
+
+def test_deserialize_with_additional_attributes() -> None:
+    data = {"id": "123", "label": "Test Node", "new_field": "New Value"}
+    node = Node.deserialize(data)  # type: ignore
+    assert "new_field" in node.additional_attributes
+    assert node.additional_attributes["new_field"] == "New Value"
+
+
+def test_deserialize_edge_success() -> None:
+    data = {
+        "id": "e123",
+        "label": "Test Edge",
+        "from_id": "n1",
+        "to_id": "n2",
+        "is_directed": True,
+        "allow_parallel_edges": False,
+        "type": "custom_edge",
+    }
+    edge = Edge.deserialize(data)
+    assert isinstance(edge, Edge)
+    assert edge.id == "e123"
+    assert edge.label == "Test Edge"
+    assert edge.from_id == "n1"
+    assert edge.to_id == "n2"
+    assert edge.is_directed is True
+    assert edge.allow_parallel_edges is False
+    assert edge.type == "custom_edge"
+
+
+def test_deserialize_edge_with_type_mismatch() -> None:
+    data = {
+        "id": "e123",
+        "from_id": "n1",
+        "to_id": "n2",
+        "is_directed": "not a boolean",  # This should be a boolean
+        "allow_parallel_edges": False,
+    }
+    with pytest.raises(TypeError):
+        Edge.deserialize(data)
+
+
+def test_deserialize_edge_with_missing_fields() -> None:
+    data = {
+        "id": "e123",
+        "from_id": "n1",
+        # Missing 'to_id' field
+    }
+    with pytest.raises(ValidationError):
+        Edge.deserialize(data)  # type: ignore
+
+
+def test_deserialize_edge_with_additional_attributes() -> None:
+    data = {
+        "id": "e123",
+        "from_id": "n1",
+        "to_id": "n2",
+        "new_field": "New Value",  # Additional attribute not defined in Edge model
+    }
+    edge = Edge.deserialize(data)  # type: ignore
+    assert "new_field" in edge.additional_attributes
+    assert edge.additional_attributes["new_field"] == "New Value"
