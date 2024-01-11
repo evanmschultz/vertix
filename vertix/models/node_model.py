@@ -50,4 +50,5 @@ class Node(BaseGraphEntityModel["Node"]):
     neighbors_count: int = Field(
         description="The number of neighbors this node has",
         default=0,
+        ge=0,
     )
