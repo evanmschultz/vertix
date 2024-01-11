@@ -8,39 +8,40 @@ from vertix.db import setup_client
 from vertix.typings import chroma_types
 
 
-# Tests for setup_ephemeral_client
 def test_setup_ephemeral_client_returns_correct_type() -> None:
+    """Test that setup_ephemeral_client returns the correct type."""
     client: chroma_types.ClientAPI = setup_client.setup_ephemeral_client()
     assert isinstance(client, chroma_types.ClientAPI)
 
 
-# Fixture for creating and tearing down a persistent client
 @pytest.fixture
 def persistent_client() -> Generator[str, None, None]:
+    """
+    Return a generator with a path string to a persistent client and tears down the client after
+    testing is complete.
+    """
     path = "./test_chroma_db_temp"
     yield path
 
-    # Teardown directory
     shutil.rmtree(path)
 
 
-# Tests for setup_persistent_client
 def test_setup_persistent_client_returns_correct_type(persistent_client: str) -> None:
+    """Test that setup_persistent_client returns the correct type."""
     client: chroma_types.ClientAPI = setup_client.setup_persistent_client(
         persistent_client
     )
     assert isinstance(client, chroma_types.ClientAPI)
 
 
-# Tests for setup_http_client
 @patch("chromadb.HttpClient")
 def test_setup_http_client_returns_correct_type(mocked_http_client) -> None:
+    """Test that setup_http_client returns the correct type."""
     mocked_http_client.return_value = MagicMock(spec=chroma_types.ClientAPI)
     client: chroma_types.ClientAPI = setup_client.setup_http_client()
     assert isinstance(client, chroma_types.ClientAPI)
 
 
-# Test exception handling for setup_ephemeral_client
 @pytest.mark.parametrize(
     "tenant, database",
     [
@@ -57,11 +58,11 @@ def test_setup_http_client_returns_correct_type(mocked_http_client) -> None:
     ],
 )
 def test_setup_ephemeral_client_type_error(tenant: str, database: str) -> None:
+    """Test exception handling for setup_ephemeral_client."""
     with pytest.raises(TypeError):
         setup_client.setup_ephemeral_client(tenant, database)
 
 
-# Test exception handling for setup_persistent_client
 @pytest.mark.parametrize(
     "path, tenant, database",
     [
@@ -85,11 +86,11 @@ def test_setup_ephemeral_client_type_error(tenant: str, database: str) -> None:
 def test_setup_persistent_client_type_error(
     path: str, tenant: str, database: str
 ) -> None:
+    """Test exception handling for setup_persistent_client."""
     with pytest.raises(TypeError):
         setup_client.setup_persistent_client(path, tenant, database)
 
 
-# Test exception handling for setup_http_client
 @pytest.mark.parametrize(
     "host, port, ssl, headers",
     [
@@ -104,5 +105,6 @@ def test_setup_persistent_client_type_error(
 def test_setup_http_client_type_error(
     host: str, port: str, ssl: bool, headers: dict[str, str]
 ) -> None:
+    """Test exception handling for setup_http_client."""
     with pytest.raises(TypeError):
         setup_client.setup_http_client(host, port, ssl, headers)
