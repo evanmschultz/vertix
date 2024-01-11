@@ -3,6 +3,7 @@ from pydantic import ValidationError
 import pytest
 
 from vertix.models import Edge
+import vertix.tests.helper_functions as helper
 from vertix.typings import PrimitiveType
 
 
@@ -36,16 +37,17 @@ def test_edge_model(
                 edge_type=type,
             )
     else:
-        try:
-            Edge(
+        helper.try_except_block_handler(
+            lambda: Edge(
                 is_directed=is_directed,
                 allow_parallel_edges=allow_parallel_edges,
                 from_id=from_id,
                 to_id=to_id,
                 edge_type=type,
-            )
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+            ),
+            ValidationError,
+            "Unexpected ValidationError for Edge model instantiation",
+        )
 
 
 @pytest.mark.parametrize(
@@ -80,14 +82,20 @@ def test_edge_attribute_assignment_validation(
             edge.is_directed = is_directed
             edge.allow_parallel_edges = allow_parallel_edges
     else:
-        try:
-            edge.from_id = from_id
-            edge.to_id = to_id
-            edge.edge_type = edge_type
-            edge.is_directed = is_directed
-            edge.allow_parallel_edges = allow_parallel_edges
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: helper.set_attributes(
+                edge,
+                {
+                    "from_id": from_id,
+                    "to_id": to_id,
+                    "edge_type": edge_type,
+                    "is_directed": is_directed,
+                    "allow_parallel_edges": allow_parallel_edges,
+                },
+            ),
+            ValidationError,
+            "Unexpected ValidationError for Edge model assignment",
+        )
 
 
 def test_edge_model_serialization() -> None:
@@ -164,13 +172,15 @@ def test_edge_model_deserialization(
         with pytest.raises(TypeError):
             Edge.deserialize(serialized_dict)
     else:
-        try:
-            deserialized: Edge = Edge.deserialize(serialized_dict)
-            assert deserialized.from_id == from_id
-            assert deserialized.to_id == to_id
-            assert deserialized.edge_type == edge_type
-            assert deserialized.is_directed == is_directed
-            assert deserialized.allow_parallel_edges == allow_parallel_edges
-
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: Edge.deserialize(serialized_dict),
+            ValidationError,
+            "Unexpected ValidationError for Edge model deserialization",
+        )
+        deserialized: Edge = Edge.deserialize(serialized_dict)
+        assert isinstance(deserialized, Edge)
+        assert deserialized.from_id == from_id
+        assert deserialized.to_id == to_id
+        assert deserialized.edge_type == edge_type
+        assert deserialized.is_directed == is_directed
+        assert deserialized.allow_parallel_edges == allow_parallel_edges

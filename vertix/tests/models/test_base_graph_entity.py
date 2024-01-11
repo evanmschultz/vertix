@@ -5,6 +5,7 @@ from pydantic import ValidationError
 import pytest
 
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
+import vertix.tests.helper_functions as helper
 from vertix.typings import PrimitiveType
 
 
@@ -33,14 +34,15 @@ def test_base_graph_entity_model(
                 document=document,
             )
     else:
-        try:
-            BaseGraphEntityModel(
+        helper.try_except_block_handler(
+            lambda: BaseGraphEntityModel(
                 id=id,
                 label=label,
                 document=document,
-            )
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+            ),
+            ValidationError,
+            "Unexpected ValidationError for BaseGraphEntity model instantiation",
+        )
 
 
 @pytest.mark.parametrize(
@@ -66,12 +68,13 @@ def test_base_graph_entity_model_attribute_assignment_validation(
             base_graph_entity.label = label
             base_graph_entity.document = document
     else:
-        try:
-            base_graph_entity.id = id
-            base_graph_entity.label = label
-            base_graph_entity.document = document
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: helper.set_attributes(
+                base_graph_entity, {"id": id, "label": label, "document": document}
+            ),
+            ValidationError,
+            "Unexpected ValidationError for BaseGraphEntity model attribute assignment",
+        )
 
 
 @pytest.mark.parametrize(
@@ -106,10 +109,11 @@ def test_base_graph_entity_model_timestamp_validations(
         with pytest.raises(ValidationError):
             BaseGraphEntityModel(created_at=created_at, updated_at=updated_at)
     else:
-        try:
-            BaseGraphEntityModel(created_at=created_at, updated_at=updated_at)
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid timestamps")
+        helper.try_except_block_handler(
+            lambda: BaseGraphEntityModel(created_at=created_at, updated_at=updated_at),
+            ValidationError,
+            "Unexpected ValidationError for valid timestamps in BaseGraphEntity model",
+        )
 
 
 def test_base_graph_entity_timestamps_from_created_model() -> None:
@@ -132,6 +136,8 @@ def test_base_graph_entity_timestamps_from_created_model() -> None:
         ({"key": 123}, False),
         ({"key": 1.2}, False),
         ({"key": True}, False),
+        ([], True),
+        ({1: "value"}, True),
         ({"key": [1, 2, 3]}, True),
         ({"key": {"key": "value"}}, True),
         ({"key": None}, True),
@@ -214,13 +220,16 @@ def test_base_graph_entity_model_deserialization(
         with pytest.raises(TypeError):
             BaseGraphEntityModel.deserialize(serialized_dict)
     else:
-        try:
-            deserialized: BaseGraphEntityModel = BaseGraphEntityModel.deserialize(
-                serialized_dict
-            )
-            assert deserialized.id == id
-            assert deserialized.label == label
-            assert deserialized.document == document
-            assert deserialized.additional_attributes == additional_attributes
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: BaseGraphEntityModel.deserialize(serialized_dict),
+            ValidationError,
+            "Unexpected ValidationError for BaseGraphEntity model deserialization",
+        )
+        deserialized: BaseGraphEntityModel = BaseGraphEntityModel.deserialize(
+            serialized_dict
+        )
+        assert isinstance(deserialized, BaseGraphEntityModel)
+        assert deserialized.id == id
+        assert deserialized.label == label
+        assert deserialized.document == document
+        assert deserialized.additional_attributes == additional_attributes

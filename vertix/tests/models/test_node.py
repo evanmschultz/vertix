@@ -3,6 +3,7 @@ from pydantic import ValidationError
 import pytest
 
 from vertix.models import Node
+import vertix.tests.helper_functions as helper
 from vertix.typings import PrimitiveType
 
 
@@ -31,14 +32,15 @@ def test_node_model(
                 neighbors_count=neighbors_count,
             )
     else:
-        try:
-            Node(
+        helper.try_except_block_handler(
+            lambda: Node(
                 node_type=node_type,
                 description=description,
                 neighbors_count=neighbors_count,
-            )
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+            ),
+            ValidationError,
+            "Unexpected ValidationError for Node model instantiation",
+        )
 
 
 @pytest.mark.parametrize(
@@ -65,12 +67,18 @@ def test_node_attribute_assignment_validation(
             node.node_type = node_type
             node.neighbors_count = neighbors_count
     else:
-        try:
-            node.description = description
-            node.node_type = node_type
-            node.neighbors_count = neighbors_count
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: helper.set_attributes(
+                node,
+                {
+                    "description": description,
+                    "node_type": node_type,
+                    "neighbors_count": neighbors_count,
+                },
+            ),
+            ValidationError,
+            "Unexpected ValidationError for Node attribute assignment",
+        )
 
 
 def test_node_model_serialization() -> None:
@@ -138,11 +146,13 @@ def test_node_model_deserialization(
         with pytest.raises(TypeError):
             Node.deserialize(serialized_dict)
     else:
-        try:
-            deserialized: Node = Node.deserialize(serialized_dict)
-            assert deserialized.description == description
-            assert deserialized.node_type == node_type
-            assert deserialized.neighbors_count == neighbors_count
-
-        except ValidationError:
-            pytest.fail("Unexpected ValidationError for valid values")
+        helper.try_except_block_handler(
+            lambda: Node.deserialize(serialized_dict),
+            ValidationError,
+            "Unexpected ValidationError for Node model deserialization",
+        )
+        deserialized: Node = Node.deserialize(serialized_dict)
+        assert isinstance(deserialized, Node)
+        assert deserialized.description == description
+        assert deserialized.node_type == node_type
+        assert deserialized.neighbors_count == neighbors_count
