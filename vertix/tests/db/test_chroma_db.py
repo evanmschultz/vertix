@@ -24,23 +24,11 @@ def mock_node() -> Mock:
     """Return a mock Node object."""
     node = MagicMock()
     node.id = "12345678-1234-5678-1234-567812345678"
-    node.label = "Test Label"
     node.document = "Test Document"
-    node.description = "Test Description"
-    node.type = "Test Type"
-    node.neighbors_count = 0
-    node.created_at = "2024-01-01T00:00:00"
-    node.updated_at = "2024-01-01T00:00:00"
     node.additional_attributes = {"example": "example"}
     node.serialize.return_value = {
         "id": node.id,
-        "label": node.label,
         "document": node.document,
-        "description": node.description,
-        "type": node.type,
-        "neighbors_count": node.neighbors_count,
-        "created_at": node.created_at,
-        "updated_at": node.updated_at,
         **node.additional_attributes,
     }
     return node
@@ -101,23 +89,15 @@ def mock_edge() -> Mock:
     """Return a mock Edge object."""
     edge = Mock()
     edge.id = "12345678-1234-5678-1234-567812345678"
-    edge.label = "Test Label"
     edge.document = "Test Document"
-    edge.is_directed = True
-    edge.allow_parallel_edges = False
     edge.from_id = "12345678-1234-5678-1234-567812345678"
     edge.to_id = "12345678-1234-5678-1234-567812345678"
-    edge.type = "Test Type"
     edge.additional_attributes = {"example": "example"}
     edge.serialize.return_value = {
         "id": edge.id,
-        "label": edge.label,
         "document": edge.document,
-        "is_directed": edge.is_directed,
-        "allow_parallel_edges": edge.allow_parallel_edges,
         "from_id": edge.from_id,
         "to_id": edge.to_id,
-        "type": edge.type,
         **edge.additional_attributes,
     }
     return edge
