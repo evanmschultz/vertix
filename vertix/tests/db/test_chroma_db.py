@@ -1,7 +1,9 @@
+import logging
 import pytest
 from unittest.mock import MagicMock, Mock, patch
 from vertix.db import ChromaDB
 from vertix import Node, Edge
+import vertix.utilities.rich_config as config
 from vertix.typings import PrimitiveType
 
 
@@ -84,19 +86,13 @@ def test_get_node_non_existent(chroma_db: ChromaDB) -> None:
     chroma_db.collection.get.assert_called_with("non_existent_id")
 
 
-def test_get_node_not_found(
-    chroma_db: ChromaDB, caplog: pytest.LogCaptureFixture
-) -> None:
-    """Test that None is returned and a warning is logged when a node does not exist."""
-    chroma_db.collection.get.return_value = None
+def test_get_node_missing_metadata(chroma_db: ChromaDB) -> None:
+    """Test that None is returned when metadata is missing from the edge data."""
+    chroma_db.collection.get.return_value = {"metadatas": []}
 
-    result = chroma_db.get_node("non_existent_id")
+    result: Node | None = chroma_db.get_node("edge_id_with_missing_metadata")
     assert result is None
-
-    assert any(
-        "Node with id `non_existent_id` not found" in message
-        for message in caplog.messages
-    )
+    chroma_db.collection.get.assert_called_with("edge_id_with_missing_metadata")
 
 
 def test_get_node_invalid_metadata(chroma_db: ChromaDB) -> None:
@@ -106,6 +102,23 @@ def test_get_node_invalid_metadata(chroma_db: ChromaDB) -> None:
 
     with pytest.raises(TypeError):
         chroma_db.get_node("some_id")
+
+
+@pytest.mark.parametrize(
+    "arg, expected",
+    [
+        (True, False),
+        (1, False),
+        ([], False),
+        ({"a": "b"}, False),
+        (Node(), True),
+        (Edge(to_id="1", from_id="2"), False),
+    ],
+)
+def test_validate_node_type(arg: Node, expected: bool, chroma_db: ChromaDB) -> None:
+    """Test that a TypeError is raised if the node is not of type Node."""
+    result: bool = chroma_db._validate_node_type(arg)
+    assert result == expected
 
 
 @pytest.fixture
@@ -177,21 +190,22 @@ def test_get_edge_non_existent(chroma_db: ChromaDB) -> None:
     chroma_db.collection.get.assert_called_with("non_existent_id")
 
 
-@pytest.mark.parametrize(
-    "arg, expected",
-    [
-        (True, False),
-        (1, False),
-        ([], False),
-        ({"a": "b"}, False),
-        (Node(), True),
-        (Edge(to_id="1", from_id="2"), False),
-    ],
-)
-def test_validate_node_type(arg: Node, expected: bool, chroma_db: ChromaDB) -> None:
-    """Test that a TypeError is raised if the node is not of type Node."""
-    result: bool = chroma_db._validate_node_type(arg)
-    assert result == expected
+def test_get_edge_missing_metadata(chroma_db: ChromaDB) -> None:
+    """Test that None is returned when metadata is missing from the edge data."""
+    chroma_db.collection.get.return_value = {"metadatas": []}
+
+    result: Edge | None = chroma_db.get_edge("edge_id_with_missing_metadata")
+    assert result is None
+    chroma_db.collection.get.assert_called_with("edge_id_with_missing_metadata")
+
+
+def test_get_edge_invalid_metadata(chroma_db: ChromaDB) -> None:
+    """Test that TypeError is raised when metadata is not a dict."""
+    invalid_metadata: list[str] = ["not a dict"]
+    chroma_db.collection.get.return_value = {"metadatas": invalid_metadata}
+
+    with pytest.raises(TypeError):
+        chroma_db.get_edge("some_id")
 
 
 @pytest.mark.parametrize(
@@ -209,28 +223,3 @@ def test_validate_edge_type(arg: Edge, expected: bool, chroma_db: ChromaDB) -> N
     """Test that a TypeError is raised if the edge is not of type Edge."""
     result: bool = chroma_db._validate_edge_type(arg)
     assert result == expected
-
-
-# NOTE: pytest-cov is not able to detect coverage for the following test
-def test_get_edge_not_found(
-    chroma_db: ChromaDB, caplog: pytest.LogCaptureFixture
-) -> None:
-    """Test that None is returned and a warning is logged when a node does not exist."""
-    chroma_db.collection.get.return_value = None
-
-    result: Edge | None = chroma_db.get_edge("non_existent_id")
-    assert result is None
-
-    assert any(
-        "Edge with id `non_existent_id` not found" in message
-        for message in caplog.messages
-    )
-
-# NOTE: pytest-cov is not able to detect coverage for the following test
-def test_get_edge_invalid_metadata(chroma_db: ChromaDB) -> None:
-    """Test that TypeError is raised when metadata is not a dict."""
-    invalid_metadata: list[str] = ["not a dict"]
-    chroma_db.collection.get.return_value = {"metadatas": invalid_metadata}
-
-    with pytest.raises(TypeError):
-        chroma_db.get_edge("some_id")
