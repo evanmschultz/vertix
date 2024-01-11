@@ -1,5 +1,5 @@
 import logging
-from vertix.rich_config import console, setup_logging
+from vertix.utilities.rich_config import console, setup_logging
 from vertix.models import Node, Edge
 from vertix.typings import PrimitiveType
 
