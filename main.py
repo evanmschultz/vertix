@@ -4,7 +4,7 @@ from vertix.models import Node, Edge
 from vertix.typings import PrimitiveType
 
 if __name__ == "__main__":
-    node = Node(id="123", label="test", description="test", type="test")
+    node = Node(id="123", label="test", description="test", node_type="test")
     console.log(node)
     node.additional_attributes = {"test": False}
     serialized_dict: dict[str, PrimitiveType] = node.serialize()

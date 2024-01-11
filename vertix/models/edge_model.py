@@ -16,7 +16,7 @@ class Edge(BaseGraphEntityModel["Edge"]):
         - `allow_parallel_edges` (bool): Whether the edge allows parallel edges or not (defaults to False)
         - `from_id` (str): The id of the node that the edge starts from
         - `to_id` (str): The id of the node that the edge ends at
-        - `type` (str): The type of edge (defaults to "edge")
+        - `edge_type` (str): The type of edge (defaults to "edge")
         - `additional_attributes` (AttributeDictType): A dictionary of additional attributes (defaults to an empty dictionary)
 
     Methods:
@@ -45,7 +45,7 @@ class Edge(BaseGraphEntityModel["Edge"]):
     to_id: str = Field(
         description="The id of the node that the edge ends at",
     )
-    type: str = Field(
+    edge_type: str = Field(
         description="The type of edge",
         default="edge",
     )

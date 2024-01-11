@@ -27,8 +27,8 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
     Attributes:
         - `id` (str): The primary key for the the model, used to create edges (defaults to a `uuid4`)
         - `label` (str): A custom label for the node (defaults to an empty string)
-        - `created_at` (str): The time at creation (defaults to the current time)
         - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
+        - `created_at` (str): The time at creation (defaults to the current time)
         - `updated_at` (str): The time at the last update (defaults to the current time)
         - `additional_attributes` (AttributeDictType): Any additional attributes assigned to the model using the `additional_attributes` field
             - `AttributeDictType` is defined in `vertix/typings/__init__.py` as:

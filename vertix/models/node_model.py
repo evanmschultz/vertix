@@ -43,7 +43,7 @@ class Node(BaseGraphEntityModel["Node"]):
         description="A description of the node",
         default="",
     )
-    type: str = Field(
+    node_type: str = Field(
         description="The type of node, used to create edges",
         default="node",
     )
