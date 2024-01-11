@@ -171,3 +171,37 @@ def test_get_edge_non_existent(chroma_db: ChromaDB) -> None:
     result: Edge | None = chroma_db.get_edge("non_existent_id")
     assert result is None
     chroma_db.collection.get.assert_called_with("non_existent_id")
+
+
+@pytest.mark.parametrize(
+    "arg, expected",
+    [
+        (True, False),
+        (1, False),
+        ([], False),
+        ({"a": "b"}, False),
+        (Node(), True),
+        (Edge(to_id="1", from_id="2"), False),
+    ],
+)
+def test_validate_node_type(arg: Node, expected: bool, chroma_db: ChromaDB) -> None:
+    """Test that a TypeError is raised if the node is not of type Node."""
+    result: bool = chroma_db._validate_node_type(arg)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "arg, expected",
+    [
+        (True, False),
+        (1, False),
+        ([], False),
+        ({"a": "b"}, False),
+        (Node(), False),
+        (Edge(to_id="1", from_id="2"), True),
+    ],
+)
+def test_validate_edge_type(arg: Edge, expected: bool, chroma_db: ChromaDB) -> None:
+    """Test that a TypeError is raised if the edge is not of type Edge."""
+    result: bool = chroma_db._validate_edge_type(arg)
+    assert result == expected
