@@ -99,6 +99,16 @@ def test_reset_client(chroma_db_handler: ChromaDBHandler) -> None:
         mock_reset.assert_called_once()
 
 
+def test_reset_client_failure(chroma_db_handler: ChromaDBHandler) -> None:
+    """Test that an Exception is raised if the client reset returns False."""
+    with patch.object(
+        chroma_db_handler.client, "reset", return_value=False
+    ) as mock_reset:
+        with pytest.raises(Exception) as excinfo:
+            chroma_db_handler.reset_client()
+        assert "Client reset failed" in str(excinfo.value)
+
+
 def test_reset_client_reset_exception(chroma_db_handler: ChromaDBHandler) -> None:
     """Test that an Exception is raised if the client could not be reset."""
     with patch.object(

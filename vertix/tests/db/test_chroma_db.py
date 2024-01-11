@@ -84,6 +84,30 @@ def test_get_node_non_existent(chroma_db: ChromaDB) -> None:
     chroma_db.collection.get.assert_called_with("non_existent_id")
 
 
+def test_get_node_not_found(
+    chroma_db: ChromaDB, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test that None is returned and a warning is logged when a node does not exist."""
+    chroma_db.collection.get.return_value = None
+
+    result = chroma_db.get_node("non_existent_id")
+    assert result is None
+
+    assert any(
+        "Node with id `non_existent_id` not found" in message
+        for message in caplog.messages
+    )
+
+
+def test_get_node_invalid_metadata(chroma_db: ChromaDB) -> None:
+    """Test that TypeError is raised when metadata is not a dict."""
+    invalid_metadata: list[str] = ["not a dict"]
+    chroma_db.collection.get.return_value = {"metadatas": invalid_metadata}
+
+    with pytest.raises(TypeError):
+        chroma_db.get_node("some_id")
+
+
 @pytest.fixture
 def mock_edge() -> Mock:
     """Return a mock Edge object."""
@@ -185,3 +209,28 @@ def test_validate_edge_type(arg: Edge, expected: bool, chroma_db: ChromaDB) -> N
     """Test that a TypeError is raised if the edge is not of type Edge."""
     result: bool = chroma_db._validate_edge_type(arg)
     assert result == expected
+
+
+# NOTE: pytest-cov is not able to detect coverage for the following test
+def test_get_edge_not_found(
+    chroma_db: ChromaDB, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test that None is returned and a warning is logged when a node does not exist."""
+    chroma_db.collection.get.return_value = None
+
+    result: Edge | None = chroma_db.get_edge("non_existent_id")
+    assert result is None
+
+    assert any(
+        "Edge with id `non_existent_id` not found" in message
+        for message in caplog.messages
+    )
+
+# NOTE: pytest-cov is not able to detect coverage for the following test
+def test_get_edge_invalid_metadata(chroma_db: ChromaDB) -> None:
+    """Test that TypeError is raised when metadata is not a dict."""
+    invalid_metadata: list[str] = ["not a dict"]
+    chroma_db.collection.get.return_value = {"metadatas": invalid_metadata}
+
+    with pytest.raises(TypeError):
+        chroma_db.get_edge("some_id")
