@@ -104,8 +104,7 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
             - `ValueError`: If `created_at` is after the current time, or if it is not a valid isoformat string
             - `TypeError`: If `created_at` is not a string
         """
-        if not isinstance(value, str):
-            raise TypeError("`created_at` must be a isoformat timestamp string")
+
         try:
             created_at: datetime = datetime.fromisoformat(value)
             current_time: datetime = datetime.fromisoformat(cls._current_time())
@@ -125,8 +124,6 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
             - `ValueError`: If `updated_at` is after the current time, or if it is not a valid isoformat string
             - `TypeError`: If `updated_at` is not a string
         """
-        if not isinstance(value, str):
-            raise TypeError("`updated_at` must be a isoformat timestamp string")
         try:
             updated_at: datetime = datetime.fromisoformat(value)
             current_time: datetime = datetime.fromisoformat(cls._current_time())
@@ -158,12 +155,7 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
             raise ValueError("`created_at` and `updated_at` must be provided together")
 
         if values.get("created_at") and values.get("updated_at"):
-            if not isinstance(values["created_at"], str) or not isinstance(
-                values["updated_at"], str
-            ):
-                raise TypeError("`created_at` and `updated_at` must be strings")
-
-            if values["created_at"] > values["updated_at"]:
+            if values["created_at"] > values["updated_at"]:  # type: ignore
                 raise ValueError("`created_at` must be before `updated_at`")
 
         return values
@@ -220,13 +212,9 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
         for field_name, field_info in fields.items():
             if field_name in data:
                 expected_type: type | None = field_info.annotation
-                if not expected_type:
-                    raise TypeError(
-                        f"Expected type for field '{field_name}' not found in annotations"
-                    )
                 value = data[field_name]
 
-                if not isinstance(value, expected_type):
+                if not isinstance(value, expected_type):  # type: ignore
                     raise TypeError(
                         f"Expected type '{expected_type}' for field '{field_name}', got '{type(value)}'"
                     )
