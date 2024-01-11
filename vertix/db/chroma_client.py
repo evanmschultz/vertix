@@ -68,8 +68,7 @@ class ChromaDBHandler:
             - For more information on embedding functions, and which are allowed, see the ChromaDB documentation:
                 https://docs.trychroma.com/embeddings
         """
-
-        if not utils.all_are_strings([name]):
+        if not isinstance(name, str):
             raise TypeError(f"`name` argument must be a string. Got type {type(name)}")
 
         if not isinstance(metadata, dict) and metadata is not None:
@@ -91,10 +90,6 @@ class ChromaDBHandler:
         Raises:
             - `Exception`: If the collection could not be deleted
         """
-
-        if not self.client:
-            raise Exception("Chroma client not set")
-
         if not isinstance(name, str):
             raise TypeError(f"`name` argument must be a string. Got type {type(name)}")
 
@@ -107,9 +102,6 @@ class ChromaDBHandler:
         Raises:
             - `Exception`: If the client could not be reset
         """
-        if not self.client:
-            raise Exception("Chroma client not set")
-
         client_reset: bool = self.client.reset()
 
         if not client_reset:
