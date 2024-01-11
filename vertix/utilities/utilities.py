@@ -1,3 +1,6 @@
+from vertix.typings import PrimitiveType
+
+
 def all_are_strings(args: list) -> bool:
     """
     Checks if all elements in a list are strings.
@@ -45,4 +48,22 @@ def is_dict_str_str(dictionary: dict) -> bool:
         isinstance(dictionary, dict)
         and all(isinstance(arg, str) for arg in dictionary.keys())
         and all(isinstance(arg, str) for arg in dictionary.values())
+    )
+
+
+def is_dict_str_primitive_type(dictionary: dict) -> bool:
+    """
+    Checks if all keys and values in a dictionary are primitive types.
+
+    Args:
+        - `dict` (dict): The dict to check
+
+    Returns:
+        - `bool`: True if all keys and values are primitive types, False otherwise
+    """
+
+    return (
+        isinstance(dictionary, dict)
+        and all(isinstance(arg, str) for arg in dictionary.keys())
+        and all(isinstance(arg, PrimitiveType) for arg in dictionary.values())
     )
