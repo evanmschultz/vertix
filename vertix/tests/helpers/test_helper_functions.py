@@ -1,5 +1,5 @@
 import pytest
-import vertix.tests.helper_functions as helper
+import vertix.tests.helpers.helper_functions as helper
 
 
 def test_try_except_block_handler() -> None:

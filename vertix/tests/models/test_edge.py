@@ -3,7 +3,7 @@ from pydantic import ValidationError
 import pytest
 
 from vertix.models import Edge
-import vertix.tests.helper_functions as helper
+import vertix.tests.helpers.helper_functions as helper
 from vertix.typings import PrimitiveType
 
 

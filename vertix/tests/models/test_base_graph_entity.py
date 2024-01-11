@@ -5,7 +5,7 @@ from pydantic import ValidationError
 import pytest
 
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
-import vertix.tests.helper_functions as helper
+import vertix.tests.helpers.helper_functions as helper
 from vertix.typings import PrimitiveType
 
 
