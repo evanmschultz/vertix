@@ -25,8 +25,13 @@ from chromadb.api.types import (
     Embedding,
     Document,
 )
-from chromadb import Collection
-from chromadb import EmbeddingFunction
+from chromadb import (
+    Collection,
+    EmbeddingFunction,
+    EphemeralClient,
+    PersistentClient,
+    HttpClient,
+)
 
 from chromadb.api.types import (
     CollectionMetadata,
