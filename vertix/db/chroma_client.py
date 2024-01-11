@@ -1,6 +1,5 @@
 import logging
 
-import vertix.utilities.utilities as utils
 from vertix.typings import chroma_types
 
 
