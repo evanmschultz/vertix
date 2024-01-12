@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from pydantic import ValidationError
 import pytest
+from hypothesis import given, strategies
 
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
 import vertix.tests.helpers.helper_functions as helper
@@ -233,3 +234,37 @@ def test_base_graph_entity_model_deserialization(
         assert deserialized.label == label
         assert deserialized.document == document
         assert deserialized.additional_attributes == additional_attributes
+
+
+@given(
+    id=strategies.text(),
+    label=strategies.text(),
+    document=strategies.text(),
+    additional_attributes=strategies.dictionaries(
+        keys=strategies.text(),
+        values=strategies.one_of(
+            strategies.text(),
+            strategies.integers(),
+            strategies.floats(),
+            strategies.booleans(),
+        ),
+    ),
+)
+def test_base_graph_entity_model_serialization_and_deserialization_equivalency(
+    id: str,
+    label: str,
+    document: str,
+    additional_attributes: dict[str, PrimitiveType],
+) -> None:
+    """Tests the equivalency of serialization and deserialization of BaseGraphEntityModel"""
+    model = BaseGraphEntityModel(
+        id=id,
+        label=label,
+        document=document,
+        additional_attributes=additional_attributes,
+    )
+    serialized_model: dict[str, PrimitiveType] = model.serialize()
+    deserialized_model: BaseGraphEntityModel = BaseGraphEntityModel.deserialize(
+        serialized_model
+    )
+    assert deserialized_model == model
