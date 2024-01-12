@@ -112,6 +112,7 @@ def test_edge_model_serialization() -> None:
     )
     expected_serialization: dict[str, PrimitiveType] = {
         "id": "test_id",
+        "table": "edges",
         "label": "test_label",
         "document": "test_document",
         "from_id": "test_from_id",

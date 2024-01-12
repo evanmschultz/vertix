@@ -44,6 +44,10 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
         description="The primary key.",
         default_factory=lambda: str(uuid.uuid4()),
     )
+    table: str = Field(
+        description="The table name.",
+        default="",
+    )
     label: str = Field(
         description="A custom label for the model.",
         default="",

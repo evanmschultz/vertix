@@ -18,6 +18,10 @@ class ChromaDB:
         - `get_node`: Gets a node from the ChromaDB collection.
         - `add_edge`: Adds an edge to the ChromaDB collection.
         - `get_edge`: Gets an edge from the ChromaDB collection.
+        - `update_node`: Updates a node in the ChromaDB collection.
+        - `update_edge`: Updates an edge in the ChromaDB collection.
+        - `delete_by_id`: Deletes a node or edge from the ChromaDB collection.
+        - `delete_by_where_filter`: Deletes a node or edge from the ChromaDB collection.
 
     Examples:
         ```Python
@@ -96,6 +100,29 @@ class ChromaDB:
             )
         return Node.deserialize(metadata)
 
+    def update_node(self, node: Node) -> None:
+        """
+        Updates a node in the ChromaDB collection.
+
+        Args:
+            - `id` (str): The id of the node to update.
+            - `data` (dict[str, PrimitiveType]): The data to update the node with.
+
+        Raises:
+            - `TypeError`: If the node is not of type Node.
+            - `Exception`: If the node could not be updated.
+        """
+        if not isinstance(node, Node):
+            raise TypeError(
+                f"Expected node to be of type Node, got {type(node)} instead"
+            )
+        db_node: Node | None = self.get_node(node.id)
+        if not db_node:
+            return None
+
+        node.created_at = db_node.created_at
+        self._update(node)
+
     def add_edge(self, edge: Edge) -> None:
         """
         Adds an edge to the ChromaDB collection.
@@ -149,13 +176,65 @@ class ChromaDB:
             )
         return Edge.deserialize(metadata)
 
-    # def update_node(self, id, data):
-    #     # Use ChromaDB's functionality to update a node
-    #     self.chroma_client.update_node(id, data)
+    def update_edge(self, edge: Edge) -> None:
+        """
+        Updates an edge in the ChromaDB collection.
 
-    # def delete_node(self, id):
-    #     # Use ChromaDB's functionality to delete a node
-    #     self.chroma_client.delete_node(id)
+        Args:
+            - `id` (str): The id of the edge to update.
+            - `data` (dict[str, PrimitiveType]): The data to update the edge with.
+
+        Raises:
+            - `TypeError`: If the edge is not of type Edge.
+            - `Exception`: If the edge could not be updated.
+        """
+        if not isinstance(edge, Edge):
+            raise TypeError(
+                f"Expected edge to be of type Edge, got {type(edge)} instead"
+            )
+
+        db_edge: Edge | None = self.get_edge(edge.id)
+        if not db_edge:
+            return None
+
+        edge.created_at = db_edge.created_at
+        self._update(edge)
+
+    def delete_by_id(self, id: str) -> None:
+        """
+        Deletes a node or edge from the ChromaDB collection.
+
+        Args:
+            - `id` (str): The id of the node or edge to delete.
+
+        Raises:
+            - `Exception`: If the node or edge could not be deleted.
+        """
+        try:
+            self.collection.delete([id])
+        except Exception as e:
+            raise e
+
+    def delete_by_where_filter(self, where: chroma_types.Where) -> None:
+        """
+        Deletes a node or edge from the ChromaDB collection.
+
+        Args:
+            - `where` (chroma_types.Where): The filter to use to delete the node or edge.
+                - `where` is a type[Dict[str, str | int | float | bool | Dict[Literal['$gt',
+                    '$gte', '$lt', '$lte', '$ne', '$eq', '$and', '$or'], str | int | float
+                    | bool] | Dict[Literal['$in', '$nin'], List[str | int | float | bool]]
+                    | List[Where]]]
+                - For more information on the `where` filter, see the ChromaDB docs:
+                    - https://docs.trychroma.com/reference/Collection
+
+        Raises:
+            - `Exception`: If the node or edge could not be deleted.
+        """
+        try:
+            self.collection.delete(where=where)
+        except Exception as e:
+            raise e
 
     def _add(self, model: Node | Edge) -> None:
         """
@@ -175,6 +254,25 @@ class ChromaDB:
             )
         except Exception as e:
             raise e
+
+    def _update(self, model: Node | Edge) -> None:
+        """
+        Updates a model in the ChromaDB collection.
+
+        Args:
+            - `model` (Node | Edge): The model to update in the collection.
+
+        Raises:
+            - `TypeError`: If the model is not of type Node or Edge.
+            - `Exception`: If the model could not be updated in the collection.
+        """
+        try:
+            model_data: dict[str, PrimitiveType] = model.serialize()
+            self.collection.update(
+                ids=model.id, documents=model.document, metadatas=model_data
+            )
+        except Exception as e:
+            raise Exception(f"Could not update model with id `{model.id}`: {e}")
 
     def _validate_node_type(self, node: Node) -> bool:
         """

@@ -94,6 +94,7 @@ def test_node_model_serialization() -> None:
     )
     expected_serialization: dict[str, PrimitiveType] = {
         "id": "test_id",
+        "table": "nodes",
         "label": "",
         "document": "",
         "created_at": "2021-01-01T00:00:00.000000",

@@ -167,6 +167,7 @@ def test_base_graph_entity_model_serialization() -> None:
     )
     expected_serialization = {
         "id": "test_id",
+        "table": "",
         "created_at": "2021-01-01T00:00:00.000000",
         "label": "test_label",
         "document": "test_document",

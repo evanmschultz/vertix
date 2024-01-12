@@ -39,6 +39,11 @@ class Edge(BaseGraphEntityModel["Edge"]):
         ```
     """
 
+    table: str = Field(
+        description="The table name.",
+        default="edges",
+        max_length=1,
+    )
     from_id: str = Field(
         description="The id of the node that the edge starts from",
     )
