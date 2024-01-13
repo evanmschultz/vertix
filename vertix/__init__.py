@@ -1,3 +1,3 @@
 import vertix.app
 
-from vertix.models import Node, Edge, ModelType
+from vertix.models import NodeModel, EdgeModel

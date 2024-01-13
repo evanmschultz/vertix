@@ -1,15 +1,15 @@
 import logging
 from vertix.utilities.rich_config import console, setup_logging
-from vertix.models import Node, Edge
+from vertix.models import NodeModel, EdgeModel
 from vertix.typings import PrimitiveType
 
 if __name__ == "__main__":
-    node = Node(id="123", label="test", description="test", node_type="test")
+    node = NodeModel(id="123", label="test", description="test", node_type="test")
     console.log(node)
     node.additional_attributes = {"test": False}
     serialized_dict: dict[str, PrimitiveType] = node.serialize()
     console.log(serialized_dict)
-    edge = Edge(from_id="123", to_id="123")
+    edge = EdgeModel(from_id="123", to_id="123")
     console.log(edge)
     edge.allow_parallel_edges = True
     edge.additional_attributes = {"test": False}

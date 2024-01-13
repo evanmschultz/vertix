@@ -1,5 +1,5 @@
-from vertix.models.node_model import Node
-from vertix.models.edge_model import Edge
+from vertix.models.node_model import NodeModel
+from vertix.models.edge_model import EdgeModel
 
 
-ModelType = Node | Edge
+ModelType = NodeModel | EdgeModel
