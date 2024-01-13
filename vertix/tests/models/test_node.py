@@ -1,8 +1,9 @@
 from unittest.mock import patch
+from hypothesis import given, strategies
 from pydantic import ValidationError
 import pytest
 
-from vertix.models import Node
+from vertix.models import NodeModel
 import vertix.tests.helpers.helper_functions as helper
 from vertix.typings import PrimitiveType
 
@@ -26,14 +27,14 @@ def test_node_model(
     """Test that Node model is validated correctly."""
     if should_raise:
         with pytest.raises(ValidationError):
-            Node(
+            NodeModel(
                 node_type=node_type,
                 description=description,
                 neighbors_count=neighbors_count,
             )
     else:
         helper.try_except_block_handler(
-            lambda: Node(
+            lambda: NodeModel(
                 node_type=node_type,
                 description=description,
                 neighbors_count=neighbors_count,
@@ -60,7 +61,7 @@ def test_node_attribute_assignment_validation(
     should_raise: bool,
 ) -> None:
     """Test that attributes are validated correctly"""
-    node = Node()
+    node = NodeModel()
     if should_raise:
         with pytest.raises(ValidationError):
             node.description = description
@@ -83,7 +84,7 @@ def test_node_attribute_assignment_validation(
 
 def test_node_model_serialization() -> None:
     """Test serialization of Node model."""
-    base_model = Node(
+    base_model = NodeModel(
         id="test_id",
         created_at="2021-01-01T00:00:00.000000",
         updated_at="2021-01-01T00:00:00.000000",
@@ -94,6 +95,7 @@ def test_node_model_serialization() -> None:
     )
     expected_serialization: dict[str, PrimitiveType] = {
         "id": "test_id",
+        "vrtx_model_type": "node",
         "table": "nodes",
         "label": "",
         "document": "",
@@ -114,9 +116,11 @@ def test_node_model_serialization() -> None:
 
 def test_node_model_serialization_exception_handling() -> None:
     """Test serialization exception handling of Node model."""
-    model = Node()
+    model = NodeModel()
 
-    with patch.object(Node, "model_dump", side_effect=Exception("Serialization Error")):
+    with patch.object(
+        NodeModel, "model_dump", side_effect=Exception("Serialization Error")
+    ):
         with pytest.raises(Exception) as excinfo:
             model.serialize()
         assert "Serialization Error" in str(excinfo.value)
@@ -144,16 +148,29 @@ def test_node_model_deserialization(
         "neighbors_count": neighbors_count,
     }
     if should_raise:
-        with pytest.raises(TypeError):
-            Node.deserialize(serialized_dict)
+        with pytest.raises(ValidationError):
+            NodeModel.deserialize(serialized_dict)
     else:
         helper.try_except_block_handler(
-            lambda: Node.deserialize(serialized_dict),
+            lambda: NodeModel.deserialize(serialized_dict),
             ValidationError,
             "Unexpected ValidationError for Node model deserialization",
         )
-        deserialized: Node = Node.deserialize(serialized_dict)
-        assert isinstance(deserialized, Node)
+        deserialized: NodeModel = NodeModel.deserialize(serialized_dict)
+        assert isinstance(deserialized, NodeModel)
         assert deserialized.description == description
         assert deserialized.node_type == node_type
         assert deserialized.neighbors_count == neighbors_count
+
+
+@given(
+    vrtx_model_type=strategies.text().filter(lambda x: x != "node"),
+)
+def test_vrtx_model_type(vrtx_model_type: str) -> None:
+    """Test that vrtx_model_type is frozen."""
+    node = NodeModel()
+    with pytest.raises(ValidationError):
+        node.vrtx_model_type = vrtx_model_type  # type: ignore
+
+    with pytest.raises(ValidationError):
+        NodeModel(vrtx_model_type=vrtx_model_type)  # type: ignore

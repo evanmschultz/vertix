@@ -1,16 +1,17 @@
+from typing import Literal
 from pydantic import Field
 
 
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
-from vertix.typings import PrimitiveType
 
 
-class Node(BaseGraphEntityModel["Node"]):
+class NodeModel(BaseGraphEntityModel["NodeModel"]):
     """
     Model for a node in the graph database.
 
     Attributes:
         - `id` (str): The primary key for the the model, used to create edges (defaults to a uuid4)
+        - `vrtx_model_type` (Literal["node"]): The model type.
         - `label` (str): A custom label for the node (defaults to an empty string)
         - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
         - `description` (str): A description of the node (defaults to an empty string)
@@ -20,7 +21,7 @@ class Node(BaseGraphEntityModel["Node"]):
 
     Methods:
         - `serialize()`: Serializes the node into a flattened dictionary with only primitive types.
-        - `deserialize(data)`: Deserializes a dictionary into a model instance.
+        - `deserialize(data)`: Class method that deserializes a dictionary into a model instance.
 
     Notes:
         - Attributes can be updated by setting the attribute to a new value, e.g. `node.neighbors_count = 2`
@@ -39,6 +40,16 @@ class Node(BaseGraphEntityModel["Node"]):
         ```
     """
 
+    vrtx_model_type: Literal["node"] = Field(
+        description="The model type.",
+        default="node",
+        frozen=True,
+        validate_default=True,
+    )
+    table: str = Field(
+        description="The table name.",
+        default="nodes",
+    )
     description: str = Field(
         description="A description of the node",
         default="",

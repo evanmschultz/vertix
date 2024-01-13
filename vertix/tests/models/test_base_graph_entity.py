@@ -167,6 +167,7 @@ def test_base_graph_entity_model_serialization() -> None:
     )
     expected_serialization = {
         "id": "test_id",
+        "vrtx_model_type": "",
         "table": "",
         "created_at": "2021-01-01T00:00:00.000000",
         "label": "test_label",
@@ -219,7 +220,7 @@ def test_base_graph_entity_model_deserialization(
         **additional_attributes,
     }
     if should_raise:
-        with pytest.raises(TypeError):
+        with pytest.raises(ValidationError):
             BaseGraphEntityModel.deserialize(serialized_dict)
     else:
         helper.try_except_block_handler(
@@ -235,6 +236,14 @@ def test_base_graph_entity_model_deserialization(
         assert deserialized.label == label
         assert deserialized.document == document
         assert deserialized.additional_attributes == additional_attributes
+
+
+def test_base_graph_entity_model_deserialization_data_not_dict() -> None:
+    """Test exception handling when deserializing BaseGraphEntity model"""
+    data = "test_data"
+
+    with pytest.raises(TypeError):
+        BaseGraphEntityModel.deserialize(data)  # type: ignore
 
 
 @given(

@@ -1,8 +1,9 @@
 from unittest.mock import patch
+from hypothesis import given, strategies
 from pydantic import ValidationError
 import pytest
 
-from vertix.models import Edge
+from vertix.models import EdgeModel
 import vertix.tests.helpers.helper_functions as helper
 from vertix.typings import PrimitiveType
 
@@ -29,7 +30,7 @@ def test_edge_model(
     """Test that Edge model is validated correctly."""
     if should_raise:
         with pytest.raises(ValidationError):
-            Edge(
+            EdgeModel(
                 is_directed=is_directed,
                 allow_parallel_edges=allow_parallel_edges,
                 from_id=from_id,
@@ -38,7 +39,7 @@ def test_edge_model(
             )
     else:
         helper.try_except_block_handler(
-            lambda: Edge(
+            lambda: EdgeModel(
                 is_directed=is_directed,
                 allow_parallel_edges=allow_parallel_edges,
                 from_id=from_id,
@@ -70,7 +71,7 @@ def test_edge_attribute_assignment_validation(
     should_raise: bool,
 ) -> None:
     """Test that Edge attribute assignment is validated correctly."""
-    edge = Edge(
+    edge = EdgeModel(
         from_id="example_from_id",
         to_id="example_to_id",
     )
@@ -100,7 +101,7 @@ def test_edge_attribute_assignment_validation(
 
 def test_edge_model_serialization() -> None:
     """Test serialization of Edge model."""
-    base_model = Edge(
+    base_model = EdgeModel(
         id="test_id",
         label="test_label",
         document="test_document",
@@ -112,6 +113,7 @@ def test_edge_model_serialization() -> None:
     )
     expected_serialization: dict[str, PrimitiveType] = {
         "id": "test_id",
+        "vrtx_model_type": "edge",
         "table": "edges",
         "label": "test_label",
         "document": "test_document",
@@ -134,9 +136,11 @@ def test_edge_model_serialization() -> None:
 
 def test_edge_model_serialization_exception_handling() -> None:
     """Test exception handling when serializing Edge model."""
-    model = Edge(from_id="test_from_id", to_id="test_to_id")
+    model = EdgeModel(from_id="test_from_id", to_id="test_to_id")
 
-    with patch.object(Edge, "model_dump", side_effect=Exception("Serialization Error")):
+    with patch.object(
+        EdgeModel, "model_dump", side_effect=Exception("Serialization Error")
+    ):
         with pytest.raises(Exception) as excinfo:
             model.serialize()
         assert "Serialization Error" in str(excinfo.value)
@@ -170,18 +174,33 @@ def test_edge_model_deserialization(
         "allow_parallel_edges": allow_parallel_edges,
     }
     if should_raise:
-        with pytest.raises(TypeError):
-            Edge.deserialize(serialized_dict)
+        with pytest.raises(ValidationError):
+            EdgeModel.deserialize(serialized_dict)
     else:
         helper.try_except_block_handler(
-            lambda: Edge.deserialize(serialized_dict),
+            lambda: EdgeModel.deserialize(serialized_dict),
             ValidationError,
             "Unexpected ValidationError for Edge model deserialization",
         )
-        deserialized: Edge = Edge.deserialize(serialized_dict)
-        assert isinstance(deserialized, Edge)
+        deserialized: EdgeModel = EdgeModel.deserialize(serialized_dict)
+        assert isinstance(deserialized, EdgeModel)
         assert deserialized.from_id == from_id
         assert deserialized.to_id == to_id
         assert deserialized.edge_type == edge_type
         assert deserialized.is_directed == is_directed
         assert deserialized.allow_parallel_edges == allow_parallel_edges
+
+
+@given(
+    vrtx_model_type=strategies.text().filter(lambda x: x != "edge"),
+)
+def test_vrtx_model_type(vrtx_model_type: str) -> None:
+    """Test that vrtx_model_type is frozen."""
+    edge = EdgeModel(from_id="test_from_id", to_id="test_to_id")
+    with pytest.raises(ValidationError):
+        edge.vrtx_model_type = vrtx_model_type  # type: ignore
+
+    with pytest.raises(ValidationError):
+        EdgeModel(
+            from_id="test_from_id", to_id="test_to_id", vrtx_model_type=vrtx_model_type  # type: ignore
+        )

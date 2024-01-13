@@ -1,15 +1,17 @@
+from typing import Literal
 from pydantic import (
     Field,
 )
 from vertix.models.base_graph_entity_model import BaseGraphEntityModel
 
 
-class Edge(BaseGraphEntityModel["Edge"]):
+class EdgeModel(BaseGraphEntityModel["EdgeModel"]):
     """
     Model for an edge in the graph database.
 
     Attributes:
         - `id` (str): The primary key for the model (defaults to a uuid4)
+        - `vrtx_model_type` (Literal["edge"]): The model type.
         - `label` (str): A custom label for the edge (defaults to an empty string)
         - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
         - `is_directed` (bool): Whether the edge is directed or not (defaults to True)
@@ -21,6 +23,7 @@ class Edge(BaseGraphEntityModel["Edge"]):
 
     Methods:
         - `serialize()`: Serializes the edge into a flattened dictionary with only primitive types.
+        - `deserialize(data)`: Deserializes a dictionary into a model instance.
 
     Notes:
         - Attributes can be updated by setting the attribute to a new value, e.g. `edge.is_directed = False`
@@ -39,6 +42,12 @@ class Edge(BaseGraphEntityModel["Edge"]):
         ```
     """
 
+    vrtx_model_type: Literal["edge"] = Field(
+        description="The model type.",
+        default="edge",
+        frozen=True,
+        validate_default=True,
+    )
     table: str = Field(
         description="The table name.",
         default="edges",

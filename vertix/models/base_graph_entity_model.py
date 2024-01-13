@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar
 import uuid
 
 from pydantic import (
@@ -22,10 +22,16 @@ T = TypeVar("T", bound="BaseGraphEntityModel")
 
 class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
     """
+    DO NOT USE THIS CLASS DIRECTLY. INHERIT FROM IT INSTEAD.
+        - Note: The ability to inherit from this class is not yet implemented, but is on the roadmap.
+
     A base class for models to be used in the ORM for the graph databases.
 
     Attributes:
         - `id` (str): The primary key for the the model, used to create edges (defaults to a `uuid4`)
+        - `vrtx_model_type` (str): The model type. If using Vertix standard models, this will be `'node'` or `'edge'` defined in the
+            Node and Edge models respectively. (defaults to an empty string)
+        - `table` (str): The table name (defaults to an empty string)
         - `label` (str): A custom label for the node (defaults to an empty string)
         - `document` (str): A string used for vector embedding and similarity search or as other information in the graph (defaults to an empty string)
         - `created_at` (str): The time at creation (defaults to the current time)
@@ -37,12 +43,16 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
 
     Methods:
         - `serialize()`: Serializes the node into a flattened dictionary with only primitive types.
-        - `deserialize(data)`: Deserializes a dictionary into a model instance.
+        - `deserialize(data)`: Class method that deserializes a dictionary into a model instance.
     """
 
     id: str = Field(
         description="The primary key.",
         default_factory=lambda: str(uuid.uuid4()),
+    )
+    vrtx_model_type: str = Field(
+        description="The model type. If using Vertix standard models, this will be 'node' or 'edge'.",
+        default="",
     )
     table: str = Field(
         description="The table name.",
@@ -207,21 +217,26 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
 
         Raises:
             - `TypeError`: If the data is not a dictionary
-            - `TypeError`: If the data keys are not strings
-            - `TypeError`: If the data values are not primitive types
         """
+        if not isinstance(data, dict):
+            raise TypeError("`data` argument must be a dictionary")
+
         declared_attrs = {}
 
         fields: dict[str, FieldInfo] = cls.model_fields
-        for field_name, field_info in fields.items():
+        # for field_name, field_info in fields.items():
+        for field_name in fields.keys():
             if field_name in data:
-                expected_type: type | None = field_info.annotation
+                # expected_type: type | None = field_info.annotation
                 value = data[field_name]
 
-                if not isinstance(value, expected_type):  # type: ignore
-                    raise TypeError(
-                        f"Expected type '{expected_type}' for field '{field_name}', got '{type(value)}'"
-                    )
+                # if expected_type == Literal["node"] or expected_type == Literal["edge"]:
+                #     expected_type = str
+
+                # if not isinstance(value, expected_type):  # type: ignore
+                #     raise TypeError(
+                #         f"Expected type '{expected_type}' for field '{field_name}', got '{type(value)}'"
+                #     )
 
                 declared_attrs[field_name] = value
             else:
