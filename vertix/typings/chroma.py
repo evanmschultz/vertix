@@ -19,6 +19,7 @@ from chromadb.api.types import (
     Where,
     WhereDocument,
     Include,
+    URI,
     URIs,
     Loadable,
     Metadata,
