@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from vertix.db import setup_client
-from vertix.typings import chroma_types
+import vertix.typings.chroma as chroma_types
 
 
 def test_setup_ephemeral_client_returns_correct_type() -> None:
