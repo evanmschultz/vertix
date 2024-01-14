@@ -1,25 +1,49 @@
-from enum import Enum
 from dataclasses import dataclass
-from typing import Literal
-
+from enum import Enum
+from typing import NamedTuple
+from pydantic import BaseModel
 from vertix.models import NodeModel, EdgeModel
 import vertix.typings.chroma as chroma_types
 
 
-class Include(str, Enum):
+class QueryInclude(str, Enum):
     DOCUMENTS = "documents"
     EMBEDDINGS = "embeddings"
     DISTANCES = "distances"
     URIS = "uris"
-    # METADATAS = "metadatas"
+    METADATAS = "metadatas"
     # DATA = "data"
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class QueryReturn:
-    models: list[NodeModel | EdgeModel]
-    documents: list[str] | Literal[False] = False
-    embeddings: list[chroma_types.Embedding] | Literal[False] = False
-    distances: list[list[float]] | Literal[False] = False
-    uris: list[list[chroma_types.URI]] | Literal[False] = False
+    """
+    A dataclass representing a query return with the model and any additional data requested in the ChromaDB query.
+
+    Attributes:
+        - `model` (NodeModel | EdgeModel): The model.
+        - `document` (str | None): The document.
+        - `embedding` (chroma_types.Embedding | None): The embedding.
+        - `distance` (float | None): The distance.
+        - `uri` (chroma_types.URI | None): The URI.
+        - `data` (bool): Whether to include the data.
+
+    Examples:
+        ```Python
+        # Run a query and get the results as query returns.
+        models: list[NodeModel | EdgeModel] = []
+        embeddings: [chroma_types.Embedding] = []
+        for query_return in query_returns:
+            models.append(query_return.model)
+            embeddings.append(query_return.embedding)
+
+        model_1, embedding_1 = models[0], embeddings[0]
+        ```
+    """
+
+    model: NodeModel | EdgeModel
+    document: str | None = None
+    embedding: chroma_types.Embedding | None = None
+    distance: float | None = None
+    uri: chroma_types.URI | None = None
     # data: bool = False
