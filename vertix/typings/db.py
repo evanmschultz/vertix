@@ -7,6 +7,8 @@ import vertix.typings.chroma as chroma_types
 
 
 class QueryInclude(str, Enum):
+    """An enum representing the different types of data that can be included in a ChromaDB query."""
+
     DOCUMENTS = "documents"
     EMBEDDINGS = "embeddings"
     DISTANCES = "distances"
