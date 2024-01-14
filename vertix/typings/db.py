@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import NamedTuple
-from pydantic import BaseModel
 from vertix.models import NodeModel, EdgeModel
 import vertix.typings.chroma as chroma_types
 
