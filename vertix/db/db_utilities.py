@@ -1,24 +1,7 @@
 import logging
 from vertix.models import NodeModel, EdgeModel
 from vertix.typings import PrimitiveType, chroma_types
-
-
-# def update(model: NodeModel | EdgeModel, collection: chroma_types.Collection) -> None:
-#     """
-#     Updates a model in the ChromaDB collection.
-
-#     Args:
-#         - `model` (Node | Edge): The model to update in the collection.
-
-#     Raises:
-#         - `TypeError`: If the model is not of type Node or Edge.
-#         - `Exception`: If the model could not be updated in the collection.
-#     """
-#     try:
-#         model_data: dict[str, PrimitiveType] = model.serialize()
-#         collection.update(ids=model.id, documents=model.document, metadatas=model_data)
-#     except Exception as e:
-#         raise Exception(f"Could not update model with id `{model.id}`: {e}")
+from vertix.typings.db import QueryInclude, QueryReturn
 
 
 def validate_model_type(model: NodeModel | EdgeModel) -> bool:
@@ -62,26 +45,6 @@ def return_metadatas(
     return confirm_metadatas(metadatas)
 
 
-def return_model(metadata: dict[str, PrimitiveType]) -> NodeModel | EdgeModel:
-    """
-    Returns a NodeModel or EdgeModel based on the metadata.
-
-    Args:
-        - `metadata` (dict[str, PrimitiveType]): The metadata to use to return the model.
-
-    Returns:
-        - `NodeModel | EdgeModel`: The model based on the metadata.
-    """
-    if metadata["vrtx_model_type"] == "node":
-        return NodeModel.deserialize(metadata)
-    elif metadata["vrtx_model_type"] == "edge":
-        return EdgeModel.deserialize(metadata)
-    else:
-        raise ValueError(
-            f"Expected `vrtx_model_type` to be `node` or `edge`, got {metadata['vrtx_model_type']} instead"
-        )
-
-
 def confirm_metadatas(
     metadatas: list[dict[str, PrimitiveType]]
 ) -> list[dict[str, PrimitiveType]]:
@@ -105,3 +68,105 @@ def confirm_metadatas(
             "`vrtx_model_type` not found in all metadatas from ChromaDB collection"
         )
     return metadatas
+
+
+def return_model(data: dict[str, PrimitiveType]) -> NodeModel | EdgeModel:
+    """
+    Returns a NodeModel or EdgeModel based on the metadata.
+
+    Args:
+        - `metadata` (dict[str, PrimitiveType]): The metadata to use to return the model.
+
+    Returns:
+        - `NodeModel | EdgeModel`: The model based on the metadata.
+    """
+    if data["vrtx_model_type"] == "node":
+        return NodeModel.deserialize(data)
+    elif data["vrtx_model_type"] == "edge":
+        return EdgeModel.deserialize(data)
+    else:
+        raise ValueError(
+            f"Expected `vrtx_model_type` to be `node` or `edge`, got {data['vrtx_model_type']} instead"
+        )
+
+
+def update_where_filter(
+    table: str | None, where_filter: chroma_types.Where
+) -> chroma_types.Where:
+    """
+    Updates the where filter to include the table name if table is provided.
+
+    Args:
+        - `table` (str): The table name.
+        - `where_filter` (chroma_types.Where): The where filter.
+
+    Returns:
+        - `chroma_types.Where`: The updated where filter.
+    """
+    if table:
+        where_filter["table"] = table
+    return where_filter
+
+
+def ensure_metadatas_in_include(include_list: list[QueryInclude]) -> list[QueryInclude]:
+    """
+    Appends the `metadatas` to the include list if it is not already included.
+
+    Args:
+        - `include_list` (list[QueryInclude]): The include list.
+
+    Returns:
+        - `list[QueryInclude]`: The updated include list.
+    """
+    if QueryInclude.METADATAS not in include_list:
+        include_list.append(QueryInclude.METADATAS)
+    return include_list
+
+
+def process_query_return(result: chroma_types.QueryResult) -> list[QueryReturn]:
+    """
+    Returns a list of QueryReturn objects from the ChromaDB query result.
+
+    Args:
+        - `result` (chroma_types.QueryResult): The result from the ChromaDB query.
+
+    Returns:
+        - `list[QueryReturn]`: The list of QueryReturn objects.
+
+    Raises:
+        - `Exception`: If the ChromaDB query failed to return anything.
+    """
+    if not result or not result["metadatas"]:
+        raise Exception("ChromaDB query failed to return anything")
+
+    query_returns: list[QueryReturn] = []
+    for i, metadata in enumerate(result["metadatas"]):
+        model: NodeModel | EdgeModel = return_model(metadata[0])  # type: ignore
+        document: str | None = (
+            result["documents"][i][0]
+            if result["documents"] and result["documents"][i]
+            else None
+        )
+        embedding: chroma_types.Embedding | None = (
+            result["embeddings"][i][0]
+            if result["embeddings"] and result["embeddings"][i]
+            else None
+        )
+        distance: float | None = (
+            result["distances"][i][0]
+            if result["distances"] and result["distances"][i]
+            else None
+        )
+        uri: chroma_types.URI | None = (
+            result["uris"][i][0] if result["uris"] and result["uris"][i] else None
+        )
+        query_return: QueryReturn = QueryReturn(
+            model=model,
+            document=document,
+            embedding=embedding,
+            distance=distance,
+            uri=uri,
+        )
+        query_returns.append(query_return)
+
+    return query_returns
