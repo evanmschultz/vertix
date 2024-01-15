@@ -224,25 +224,10 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
         declared_attrs = {}
 
         fields: dict[str, FieldInfo] = cls.model_fields
-        # for field_name, field_info in fields.items():
         for field_name in fields.keys():
             if field_name in data:
-                # expected_type: type | None = field_info.annotation
                 value = data[field_name]
-
-                # if expected_type == Literal["node"] or expected_type == Literal["edge"]:
-                #     expected_type = str
-
-                # if not isinstance(value, expected_type):  # type: ignore
-                #     raise TypeError(
-                #         f"Expected type '{expected_type}' for field '{field_name}', got '{type(value)}'"
-                #     )
-
                 declared_attrs[field_name] = value
-            else:
-                logging.warning(
-                    f"Field '{field_name}' not found in data, setting to default value"
-                )
 
         additional_attrs: dict[str, PrimitiveType] = {
             key: value for key, value in data.items() if key not in fields

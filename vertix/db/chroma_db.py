@@ -8,7 +8,8 @@ from vertix.typings import PrimitiveType, chroma_types
 
 class ChromaDB:
     """
-    Wrapper class for a ChromaDB collection, works as the interface for the "database" (ChromaDB collection).
+    ORM for a ChromaDB collection, works as the interface for the "database" (ChromaDB collection). This class is a wrapper for the
+    ChromaDB collection logic, making sure it works as Vertix expects it to.
 
     Attributes:
         - `chroma_client` (chroma_types.ClientAPI): The ChromaDB client to use.
@@ -283,7 +284,6 @@ class ChromaDB:
                 where_document=where_document,
                 include=include_list,  # type: ignore
             )
-
             return db_utils.process_query_return(result)
         except Exception as e:
             raise Exception(f"Query failed: {e}")
