@@ -139,34 +139,37 @@ def process_query_return(result: chroma_types.QueryResult) -> list[QueryReturn]:
     if not result or not result["metadatas"]:
         raise Exception("ChromaDB query failed to return anything")
 
+    # TODO: Refactor to first create a list of dictionaries, extracting all of the connected data from the result and then
+    # TODO: create the QueryReturn objects from the list of dictionaries so that the code is more readable.
     query_returns: list[QueryReturn] = []
-    for i, metadata in enumerate(result["metadatas"]):
-        model: NodeModel | EdgeModel = return_model(metadata[0])  # type: ignore
-        document: str | None = (
-            result["documents"][i][0]
-            if result["documents"] and result["documents"][i]
-            else None
-        )
-        embedding: chroma_types.Embedding | None = (
-            result["embeddings"][i][0]
-            if result["embeddings"] and result["embeddings"][i]
-            else None
-        )
-        distance: float | None = (
-            result["distances"][i][0]
-            if result["distances"] and result["distances"][i]
-            else None
-        )
-        uri: chroma_types.URI | None = (
-            result["uris"][i][0] if result["uris"] and result["uris"][i] else None
-        )
-        query_return: QueryReturn = QueryReturn(
-            model=model,
-            document=document,
-            embedding=embedding,
-            distance=distance,
-            uri=uri,
-        )
-        query_returns.append(query_return)
+    for i, metadatas in enumerate(result["metadatas"]):
+        for j, data in enumerate(metadatas):
+            model: NodeModel | EdgeModel = return_model(data)  # type: ignore
+            document: str | None = (
+                result["documents"][i][j]
+                if result["documents"] and result["documents"][i]
+                else None
+            )
+            embedding: chroma_types.Embedding | None = (
+                result["embeddings"][i][j]
+                if result["embeddings"] and result["embeddings"][i]
+                else None
+            )
+            distance: float | None = (
+                result["distances"][i][j]
+                if result["distances"] and result["distances"][i]
+                else None
+            )
+            uri: chroma_types.URI | None = (
+                result["uris"][i][j] if result["uris"] and result["uris"][i] else None
+            )
+            query_return: QueryReturn = QueryReturn(
+                model=model,
+                document=document,
+                embedding=embedding,
+                distance=distance,
+                uri=uri,
+            )
+            query_returns.append(query_return)
 
     return query_returns
