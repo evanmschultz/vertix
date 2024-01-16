@@ -58,10 +58,6 @@ class BaseGraphEntityModel(BaseModel, Generic[T], validate_assignment=True):
         description="The table name.",
         default="",
     )
-    label: str = Field(
-        description="A custom label for the model.",
-        default="",
-    )
     document: str = Field(
         description="A string used for vector embedding and similarity search or as other information in the graph.",
         default="",

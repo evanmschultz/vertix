@@ -52,6 +52,10 @@ class EdgeModel(BaseGraphEntityModel["EdgeModel"]):
         description="The table name.",
         default="edges",
     )
+    label: str = Field(
+        description="A custom label for the edge",
+        default="",
+    )
     from_id: str = Field(
         description="The id of the node that the edge starts from",
     )

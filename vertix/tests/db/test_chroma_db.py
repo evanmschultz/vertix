@@ -27,11 +27,13 @@ def mock_node() -> Mock:
     node = MagicMock()
     node.id = "12345678-1234-5678-1234-567812345678"
     node.vrtx_model_type = "node"
+    node.label = "Test Node"
     node.document = "Test Document"
     node.additional_attributes = {"example": "example"}
     node.serialize.return_value = {
         "id": node.id,
         "vrtx_model_type": node.vrtx_model_type,
+        "label": node.label,
         "document": node.document,
         **node.additional_attributes,
     }
@@ -207,6 +209,7 @@ def test_get_all(chroma_db: ChromaDB) -> None:
             {
                 "id": "test_node_id",
                 "vrtx_model_type": "node",
+                "label": "test_label",
                 "created_at": "2021-01-01T00:00:00.000000",
                 "updated_at": "2021-01-01T00:00:00.000000",
             },
@@ -253,7 +256,7 @@ def test_update_by_id(chroma_db: ChromaDB) -> None:
         updated_at="2021-01-01T00:00:00.000000",
     )
 
-    updated_node = NodeModel(id="test_node_id")
+    updated_node = NodeModel(id="test_node_id", label=existing_node.label)
     chroma_db.get_by_id = MagicMock(return_value=existing_node)
 
     chroma_db.update(updated_node)
@@ -280,7 +283,7 @@ def test_update_by_id(chroma_db: ChromaDB) -> None:
 
 def test_update_by_id_non_existent(chroma_db: ChromaDB) -> None:
     """Test that the update_node method does nothing if the node does not exist."""
-    non_existent_node = NodeModel(id="non_existent_id")
+    non_existent_node = NodeModel(id="non_existent_id", label="test_label")
 
     with patch.object(db_utils, "validate_model_type", return_value=True):
         chroma_db.get_by_id = MagicMock(return_value=None)
@@ -306,6 +309,7 @@ def test_update_try_except(chroma_db: ChromaDB) -> None:
         node = NodeModel(
             created_at="2021-01-01T00:00:00.000000",
             updated_at="2021-01-01T00:00:00.000000",
+            label="Test Node",
         )
         with patch("vertix.db.ChromaDB.get_by_id", return_value=node):
             with pytest.raises(Exception) as exc_info:
@@ -319,7 +323,7 @@ def test_update_try_except(chroma_db: ChromaDB) -> None:
 @pytest.mark.parametrize(
     "arg, expected",
     [
-        (NodeModel(), True),
+        (NodeModel(label="Test Node"), True),
         (EdgeModel(to_id="1", from_id="2"), True),
         (True, False),
         (1, False),
@@ -357,7 +361,7 @@ def test_query_success(chroma_db: ChromaDB) -> None:
         uris=[["http://example.com/1"], None],  # type: ignore
         data=[["data1"], None],  # type: ignore
         metadatas=[
-            [{"id": "test_node", "vrtx_model_type": "node"}],
+            [{"id": "test_node", "label": "test label", "vrtx_model_type": "node"}],
             [
                 {
                     "id": "test_edge",

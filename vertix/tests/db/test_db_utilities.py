@@ -8,14 +8,16 @@ from vertix.typings.db import QueryInclude, QueryReturn
 
 def test_validate_model_type() -> None:
     """Test that the validate_model_type function returns True if the model is of type Node or Edge."""
-    assert db_utils.validate_model_type(NodeModel()) is True
+    assert db_utils.validate_model_type(NodeModel(label="test_label")) is True
     assert db_utils.validate_model_type(EdgeModel(from_id="1", to_id="2")) is True
     assert db_utils.validate_model_type("test") is False  # type: ignore
 
 
 def test_return_model() -> None:
     """Test that the return_model function returns a NodeModel or EdgeModel based on the metadata."""
-    node_data: dict[str, PrimitiveType] = NodeModel(id="node").serialize()
+    node_data: dict[str, PrimitiveType] = NodeModel(
+        id="node", label="test_label"
+    ).serialize()
     edge_data: dict[str, PrimitiveType] = EdgeModel(
         id="edge", from_id="1", to_id="2"
     ).serialize()
@@ -32,7 +34,7 @@ def test_return_model() -> None:
 def test_confirm_metadatas_success() -> None:
     """Test that the confirm_metadatas function returns the metadatas if they are valid."""
     metadatas: list[dict[str, PrimitiveType]] = [
-        NodeModel(id="node").serialize(),
+        NodeModel(id="node", label="test label").serialize(),
         EdgeModel(id="edge", from_id="1", to_id="2").serialize(),
     ]
 
@@ -62,7 +64,7 @@ def test_process_query_return_success() -> None:
         uris=[["http://example.com/1"], None],  # type: ignore
         data=[["data1"], None],  # type: ignore
         metadatas=[
-            [{"id": "test_node", "vrtx_model_type": "node"}],
+            [{"id": "test_node", "label": "test label", "vrtx_model_type": "node"}],
             [
                 {
                     "id": "test_edge",
@@ -79,6 +81,7 @@ def test_process_query_return_success() -> None:
     )
     assert len(query_returns) == 2
     assert query_returns[0].model.id == "test_node"
+    assert query_returns[0].model.label == "test label"
     assert query_returns[1].model.id == "test_edge"
     assert isinstance(query_returns[0].model, NodeModel)
     assert isinstance(query_returns[1].model, EdgeModel)

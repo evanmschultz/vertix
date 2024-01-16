@@ -11,18 +11,16 @@ from vertix.typings import PrimitiveType
 
 
 @pytest.mark.parametrize(
-    "id, label, document, should_raise",
+    "id, document, should_raise",
     [
-        ("test_id", "test_label", "test_document", False),
-        (None, "test_label", "test_document", True),
-        ("test_id", 123, "test_document", True),
-        ("test_id", "test_label", (), True),
-        ("test_id", "test_label", {}, True),
+        ("test_id", "test_document", False),
+        (None, "test_document", True),
+        ("test_id", (), True),
+        ("test_id", {}, True),
     ],
 )
 def test_base_graph_entity_model(
     id: str,
-    label: str,
     document: str,
     should_raise: bool,
 ) -> None:
@@ -31,14 +29,12 @@ def test_base_graph_entity_model(
         with pytest.raises(ValidationError):
             BaseGraphEntityModel(
                 id=id,
-                label=label,
                 document=document,
             )
     else:
         helper.try_except_block_handler(
             lambda: BaseGraphEntityModel(
                 id=id,
-                label=label,
                 document=document,
             ),
             ValidationError,
@@ -47,17 +43,15 @@ def test_base_graph_entity_model(
 
 
 @pytest.mark.parametrize(
-    "id, label, document, should_raise",
+    "id, document, should_raise",
     [
-        ("test_id", "test_label", "test_document", False),
-        (None, "test_label", "test_document", True),
-        ("test_id", 123, "test_document", True),
-        ("test_id", "test_label", (), True),
+        ("test_id", "test_document", False),
+        (None, "test_document", True),
+        ("test_id", (), True),
     ],
 )
 def test_base_graph_entity_model_attribute_assignment_validation(
     id: str,
-    label: str,
     document: str,
     should_raise: bool,
 ) -> None:
@@ -66,12 +60,11 @@ def test_base_graph_entity_model_attribute_assignment_validation(
     if should_raise:
         with pytest.raises(ValidationError):
             base_graph_entity.id = id
-            base_graph_entity.label = label
             base_graph_entity.document = document
     else:
         helper.try_except_block_handler(
             lambda: helper.set_attributes(
-                base_graph_entity, {"id": id, "label": label, "document": document}
+                base_graph_entity, {"id": id, "document": document}
             ),
             ValidationError,
             "Unexpected ValidationError for BaseGraphEntity model attribute assignment",
@@ -161,7 +154,6 @@ def test_base_graph_entity_model_serialization() -> None:
         id="test_id",
         created_at="2021-01-01T00:00:00.000000",
         updated_at="2021-01-01T00:00:00.000000",
-        label="test_label",
         document="test_document",
         additional_attributes={"test_attribute": True, "test_attribute2": 123},
     )
@@ -170,7 +162,6 @@ def test_base_graph_entity_model_serialization() -> None:
         "vrtx_model_type": "",
         "table": "",
         "created_at": "2021-01-01T00:00:00.000000",
-        "label": "test_label",
         "document": "test_document",
         "test_attribute": True,
         "test_attribute2": 123,
@@ -196,18 +187,16 @@ def test_base_graph_entity_model_serialization_exception_handling() -> None:
 
 
 @pytest.mark.parametrize(
-    "id, label, document, additional_attributes, should_raise",
+    "id, document, additional_attributes, should_raise",
     [
-        ("test_id", "test_label", "test_document", {"key": "example"}, False),
-        (None, "test_label", "test_document", {}, True),
-        ("test_id", 123, "test_document", {}, True),
-        ("test_id", "test_label", (), {}, True),
-        ("test_id", "test_label", {}, {}, True),
+        ("test_id", "test_document", {"key": "example"}, False),
+        (None, "test_document", {}, True),
+        ("test_id", (), {}, True),
+        ("test_id", {}, {}, True),
     ],
 )
 def test_base_graph_entity_model_deserialization(
     id: str,
-    label: str,
     document: str,
     additional_attributes: dict[str, PrimitiveType],
     should_raise: bool,
@@ -215,7 +204,6 @@ def test_base_graph_entity_model_deserialization(
     """Test deserialization of BaseGraphEntity model"""
     serialized_dict: dict[str, PrimitiveType] = {
         "id": id,
-        "label": label,
         "document": document,
         **additional_attributes,
     }
@@ -233,7 +221,6 @@ def test_base_graph_entity_model_deserialization(
         )
         assert isinstance(deserialized, BaseGraphEntityModel)
         assert deserialized.id == id
-        assert deserialized.label == label
         assert deserialized.document == document
         assert deserialized.additional_attributes == additional_attributes
 
@@ -248,7 +235,6 @@ def test_base_graph_entity_model_deserialization_data_not_dict() -> None:
 
 @given(
     id=strategies.text(),
-    label=strategies.text(),
     document=strategies.text(),
     additional_attributes=strategies.dictionaries(
         keys=strategies.text(),
@@ -262,14 +248,12 @@ def test_base_graph_entity_model_deserialization_data_not_dict() -> None:
 )
 def test_base_graph_entity_model_serialization_and_deserialization_equivalency(
     id: str,
-    label: str,
     document: str,
     additional_attributes: dict[str, PrimitiveType],
 ) -> None:
     """Tests the equivalency of serialization and deserialization of BaseGraphEntityModel"""
     model = BaseGraphEntityModel(
         id=id,
-        label=label,
         document=document,
         additional_attributes=additional_attributes,
     )

@@ -40,6 +40,9 @@ class NodeModel(BaseGraphEntityModel["NodeModel"]):
         ```
     """
 
+    label: str = Field(
+        description="A custom label for the node",
+    )
     vrtx_model_type: Literal["node"] = Field(
         description="The model type.",
         default="node",

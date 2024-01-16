@@ -9,16 +9,18 @@ from vertix.typings import PrimitiveType
 
 
 @pytest.mark.parametrize(
-    "description, node_type, neighbors_count, should_raise",
+    "label, description, node_type, neighbors_count, should_raise",
     [
-        ("Test Description", "node", 5, False),
-        ((), "node", 0, True),
-        ("Test Description", "node", "abc", True),
-        ("Test Description", "node", -1, True),
-        ("Test Description", 123, 5, True),
+        ("test", "Test Description", "node", 5, False),
+        (1, "Test Description", "node", 5, True),
+        ("test", (), "node", 0, True),
+        ("test", "Test Description", "node", "abc", True),
+        ("test", "Test Description", "node", -1, True),
+        ("test", "Test Description", 123, 5, True),
     ],
 )
 def test_node_model(
+    label: str,
     node_type: str,
     description: str,
     neighbors_count: int,
@@ -28,6 +30,7 @@ def test_node_model(
     if should_raise:
         with pytest.raises(ValidationError):
             NodeModel(
+                label=label,
                 node_type=node_type,
                 description=description,
                 neighbors_count=neighbors_count,
@@ -35,6 +38,7 @@ def test_node_model(
     else:
         helper.try_except_block_handler(
             lambda: NodeModel(
+                label=label,
                 node_type=node_type,
                 description=description,
                 neighbors_count=neighbors_count,
@@ -45,25 +49,28 @@ def test_node_model(
 
 
 @pytest.mark.parametrize(
-    "description, node_type, neighbors_count, should_raise",
+    "label, description, node_type, neighbors_count, should_raise",
     [
-        ("Test Description", "test_node_type", 4, False),
-        ((), "test_node_type", 0, True),
-        ("Test Description", None, 0, True),
-        ("Test Description", "test_node_type", -1, True),
-        ("Test Description", "test_node_type", 1.2, True),
+        ("test_label", "Test Description", "test_node_type", 4, False),
+        ({}, "Test Description", "test_node_type", 4, True),
+        ("test_label", (), "test_node_type", 0, True),
+        ("test_label", "Test Description", None, 0, True),
+        ("test_label", "Test Description", "test_node_type", -1, True),
+        ("test_label", "Test Description", "test_node_type", 1.2, True),
     ],
 )
 def test_node_attribute_assignment_validation(
+    label: str,
     description: str,
     node_type: str,
     neighbors_count: int,
     should_raise: bool,
 ) -> None:
     """Test that attributes are validated correctly"""
-    node = NodeModel()
+    node = NodeModel(label="test_label")
     if should_raise:
         with pytest.raises(ValidationError):
+            node.label = label
             node.description = description
             node.node_type = node_type
             node.neighbors_count = neighbors_count
@@ -72,6 +79,7 @@ def test_node_attribute_assignment_validation(
             lambda: helper.set_attributes(
                 node,
                 {
+                    "label": label,
                     "description": description,
                     "node_type": node_type,
                     "neighbors_count": neighbors_count,
@@ -86,6 +94,7 @@ def test_node_model_serialization() -> None:
     """Test serialization of Node model."""
     base_model = NodeModel(
         id="test_id",
+        label="test_label",
         created_at="2021-01-01T00:00:00.000000",
         updated_at="2021-01-01T00:00:00.000000",
         description="Test Description",
@@ -97,7 +106,7 @@ def test_node_model_serialization() -> None:
         "id": "test_id",
         "vrtx_model_type": "node",
         "table": "nodes",
-        "label": "",
+        "label": "test_label",
         "document": "",
         "created_at": "2021-01-01T00:00:00.000000",
         "description": "Test Description",
@@ -116,7 +125,7 @@ def test_node_model_serialization() -> None:
 
 def test_node_model_serialization_exception_handling() -> None:
     """Test serialization exception handling of Node model."""
-    model = NodeModel()
+    model = NodeModel(label="test")
 
     with patch.object(
         NodeModel, "model_dump", side_effect=Exception("Serialization Error")
@@ -127,15 +136,17 @@ def test_node_model_serialization_exception_handling() -> None:
 
 
 @pytest.mark.parametrize(
-    "description, node_type, neighbors_count, should_raise",
+    "label, description, node_type, neighbors_count, should_raise",
     [
-        ("test description", "test_node_type", 0, False),
-        (None, "test_node_type", 0, True),
-        ("test description", (), 0, True),
-        ("test description", "test_node_type", 1.2, True),
+        ("test", "test description", "test_node_type", 0, False),
+        ({}, "test description", "test_node_type", 0, True),
+        ("test", None, "test_node_type", 0, True),
+        ("test", "test description", (), 0, True),
+        ("test", "test description", "test_node_type", 1.2, True),
     ],
 )
 def test_node_model_deserialization(
+    label: str,
     description: str,
     node_type: str,
     neighbors_count: int,
@@ -143,6 +154,7 @@ def test_node_model_deserialization(
 ) -> None:
     """Test deserialization of Node model."""
     serialized_dict: dict[str, PrimitiveType] = {
+        "label": label,
         "description": description,
         "node_type": node_type,
         "neighbors_count": neighbors_count,
@@ -168,7 +180,7 @@ def test_node_model_deserialization(
 )
 def test_vrtx_model_type(vrtx_model_type: str) -> None:
     """Test that vrtx_model_type is frozen."""
-    node = NodeModel()
+    node = NodeModel(label="test")
     with pytest.raises(ValidationError):
         node.vrtx_model_type = vrtx_model_type  # type: ignore
 
