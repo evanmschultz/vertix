@@ -1,6 +1,6 @@
 import shutil
 from typing import Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import create_autospec, patch
 
 import pytest
 
@@ -37,7 +37,7 @@ def test_setup_persistent_client_returns_correct_type(persistent_client: str) ->
 @patch("chromadb.HttpClient")
 def test_setup_http_client_returns_correct_type(mocked_http_client) -> None:
     """Test that setup_http_client returns the correct type."""
-    mocked_http_client.return_value = MagicMock(spec=chroma_types.ClientAPI)
+    mocked_http_client.return_value = create_autospec(chroma_types.ClientAPI)
     client: chroma_types.ClientAPI = setup_client.setup_http_client()
     assert isinstance(client, chroma_types.ClientAPI)
 

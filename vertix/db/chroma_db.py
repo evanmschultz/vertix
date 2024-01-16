@@ -1,4 +1,6 @@
 import logging
+
+from pydantic import BaseModel
 from vertix.models import NodeModel, EdgeModel
 import vertix.db.db_utilities as db_utils
 
@@ -6,18 +8,18 @@ from vertix.typings.db import QueryInclude, QueryReturn
 from vertix.typings import PrimitiveType, chroma_types
 
 
-class ChromaDB:
+class ChromaDB(BaseModel):
     """
     ORM for a ChromaDB collection, works as the interface for the "database" (ChromaDB collection). This class is a wrapper for the
     ChromaDB collection logic, making sure it works as Vertix expects it to.
 
     Attributes:
-        - `chroma_client` (chroma_types.ClientAPI): The ChromaDB client to use.
         - `collection` (chroma_types.Collection): The ChromaDB collection to use.
 
     Methods:
         - `add`: Adds a model (`NodeModel | EdgeModel`) to the ChromaDB collection.
         - `get_by_id`: Gets a model (`NodeModel | EdgeModel`) from the ChromaDB collection by its ID.
+        - `get_all`: Gets all models (`NodeModel | EdgeModel`) from the ChromaDB collection.
         - `update`: Updates a model (`NodeModel | EdgeModel`) in the ChromaDB collection by its ID.
         - `delete_by_id`: Deletes a 'node' or 'edge' from the ChromaDB collection.
         - `delete_by_where_filter`: Deletes a 'node' or 'edge' from the ChromaDB collection.
@@ -34,7 +36,7 @@ class ChromaDB:
         # Get or create a collection
         collection = chroma_client.get_or_create_collection("test_collection")
         # Create a ChromaDB wrapper for the collection
-        chroma_db = ChromaDB(chroma_client, collection)
+        chroma_db = ChromaDB(collection)
         ```
 
     Notes:
@@ -43,11 +45,7 @@ class ChromaDB:
         GitHub repo: https://github.com/evanmschultz/vertix.git
     """
 
-    def __init__(
-        self, chroma_client: chroma_types.ClientAPI, collection: chroma_types.Collection
-    ) -> None:
-        self.chroma_client: chroma_types.ClientAPI = chroma_client
-        self.collection: chroma_types.Collection = collection
+    collection: chroma_types.Collection
 
     def add(self, model: NodeModel | EdgeModel) -> None:
         """

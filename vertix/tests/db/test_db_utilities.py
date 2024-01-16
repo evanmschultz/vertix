@@ -1,3 +1,5 @@
+from unittest import mock
+from unittest.mock import create_autospec
 import pytest
 
 import vertix.db.db_utilities as db_utils
@@ -8,8 +10,10 @@ from vertix.typings.db import QueryInclude, QueryReturn
 
 def test_validate_model_type() -> None:
     """Test that the validate_model_type function returns True if the model is of type Node or Edge."""
-    assert db_utils.validate_model_type(NodeModel(label="test_label")) is True
-    assert db_utils.validate_model_type(EdgeModel(from_id="1", to_id="2")) is True
+    node: NodeModel = create_autospec(NodeModel)
+    edge: EdgeModel = create_autospec(EdgeModel)
+    assert db_utils.validate_model_type(node) is True
+    assert db_utils.validate_model_type(edge) is True
     assert db_utils.validate_model_type("test") is False  # type: ignore
 
 

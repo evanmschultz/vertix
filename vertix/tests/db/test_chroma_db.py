@@ -1,5 +1,6 @@
 import pytest
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, create_autospec, patch
+
 from vertix.db import ChromaDB
 import vertix.db.db_utilities as db_utils
 from vertix import NodeModel, EdgeModel
@@ -10,21 +11,19 @@ from vertix.typings.db import QueryReturn, QueryInclude
 @pytest.fixture
 def chroma_db() -> ChromaDB:
     """Return a ChromaDB instance."""
-    client_mock = Mock()
-    collection_mock = Mock()
-    return ChromaDB(client_mock, collection_mock)
+    collection_mock = create_autospec(chroma_types.Collection)
+    return ChromaDB(collection=collection_mock)
 
 
 def test_chroma_db_initialization(chroma_db: ChromaDB) -> None:
     """Test that the ChromaDB instance is initialized correctly."""
     assert chroma_db.collection is not None
-    assert chroma_db.chroma_client is not None
 
 
 @pytest.fixture()
 def mock_node() -> Mock:
     """Return a mock Node object."""
-    node = MagicMock()
+    node = create_autospec(NodeModel)
     node.id = "12345678-1234-5678-1234-567812345678"
     node.vrtx_model_type = "node"
     node.label = "Test Node"
@@ -84,49 +83,17 @@ def test_add_error_handling(
     mock_node: Mock, mock_edge: Mock, chroma_db: ChromaDB
 ) -> None:
     """Test that errors are handled correctly when adding to collection."""
-    # mock_node.id = "test_id"
     mock_node.serialize.side_effect = Exception("Test Exception")
     with patch.object(db_utils, "validate_model_type", return_value=True):
         with pytest.raises(Exception) as excinfo1:
             chroma_db.add(mock_node)
         assert "Test Exception" in str(excinfo1.value)
 
-    # with pytest.raises(TypeError) as excinfo2:
-    #     chroma_db.add("test")  # type: ignore # wrong type
-    #     assert "Expected model to be of type `NodeModel` or `EdgeModel`" in str(
-    #         excinfo2.value
-    #     )
-
-    # mock_edge.serialize.side_effect = Exception("Test Exception")
-    # with patch.object(db_utils, "validate_model_type", return_value=True):
-    #     with pytest.raises(Exception) as excinfo1:
-    #         chroma_db.add(mock_edge)
-    #     assert "Test Exception" in str(excinfo1.value)
-
     with pytest.raises(TypeError) as excinfo2:
         chroma_db.add("test")  # type: ignore # wrong type
     assert "Expected model to be of type `NodeModel` or `EdgeModel`" in str(
         excinfo2.value
     )
-
-
-# def test_update_raises_exception(chroma_db: ChromaDB) -> None:
-#     # Create a mock for the collection with an update method that raises an exception
-#     mock_collection = MagicMock()
-#     mock_collection.update.side_effect = Exception("Update failed")
-
-#     # Create a mock model with a valid ID
-#     model = NodeModel()
-
-#     # Expect an exception when the update method is called
-#     with pytest.raises(Exception) as exc_info:
-#         chroma_db.update(model)
-
-#         # Assert that the exception message is as expected
-#     assert (
-#         str(exc_info.value)
-#         == f"Could not update model with id `{model.id}`: Update failed"
-#     )
 
 
 def test_get_by_id_success(
@@ -257,9 +224,9 @@ def test_update_by_id(chroma_db: ChromaDB) -> None:
     )
 
     updated_node = NodeModel(id="test_node_id", label=existing_node.label)
-    chroma_db.get_by_id = MagicMock(return_value=existing_node)
+    with patch.object(ChromaDB, "get_by_id", return_value=existing_node):
+        chroma_db.update(updated_node)
 
-    chroma_db.update(updated_node)
     assert updated_node.created_at == existing_node.created_at
 
     existing_edge = EdgeModel(
@@ -275,9 +242,9 @@ def test_update_by_id(chroma_db: ChromaDB) -> None:
         from_id="11",
         to_id="22",
     )
-    chroma_db.get_by_id = MagicMock(return_value=existing_edge)
+    with patch.object(ChromaDB, "get_by_id", return_value=existing_edge):
+        chroma_db.update(updated_edge)
 
-    chroma_db.update(updated_edge)
     assert updated_edge.created_at == existing_edge.created_at
 
 
@@ -286,9 +253,10 @@ def test_update_by_id_non_existent(chroma_db: ChromaDB) -> None:
     non_existent_node = NodeModel(id="non_existent_id", label="test_label")
 
     with patch.object(db_utils, "validate_model_type", return_value=True):
-        chroma_db.get_by_id = MagicMock(return_value=None)
+        with patch.object(ChromaDB, "get_by_id", return_value=None):
+            chroma_db.update(non_existent_node)
 
-        chroma_db.update(non_existent_node)
+        # chroma_db.update(non_existent_node)
 
         chroma_db.collection.update.assert_not_called()
 
